@@ -23,9 +23,9 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const leagueId = params.leagueId;
 
   useEffect(() => {
+    const leagueId = params.leagueId;
     async function fetchLeague() {
       const leagueData = await getLeagueById(leagueId);
       if (leagueData) {
@@ -34,7 +34,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
       setLoading(false);
     }
     fetchLeague();
-  }, [leagueId]);
+  }, [params.leagueId]);
   
   if (loading) {
     return <div>Loading...</div>; // Or a skeleton loader
