@@ -28,7 +28,7 @@ import { useRouter, notFound } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Player, League } from "@/lib/types";
-import { ArrowLeft, User as UserIcon } from "lucide-react";
+import { ArrowLeft, User as UserIcon, Users } from "lucide-react";
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -82,9 +82,10 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
   const activePlayers = league?.players.filter(p => p.status === 'active') || [];
   const playerA = activePlayers.find(p => p.id === playerAId);
   const playerB = activePlayers.find(p => p.id === playerBId);
+  const canRecordMatch = activePlayers.length >= 2;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!league) return;
+    if (!league || !canRecordMatch) return;
 
     try {
       await recordMatch(league.id, values);
@@ -122,134 +123,144 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="playerAId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Player A</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a player" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {activePlayers.map(p => (
-                            <SelectItem key={p.id} value={p.id} disabled={p.id === playerBId}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="playerBId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Player B</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a player" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {activePlayers.map(p => (
-                            <SelectItem key={p.id} value={p.id} disabled={p.id === playerAId}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          {!canRecordMatch ? (
+             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                <Users className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold">Not Enough Players</h3>
+                <p className="text-muted-foreground mt-2">
+                    You need at least two active players in the league to record a match.
+                </p>
+             </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="playerAId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player A</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a player" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {activePlayers.map(p => (
+                              <SelectItem key={p.id} value={p.id} disabled={p.id === playerBId}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="playerBId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player B</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a player" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {activePlayers.map(p => (
+                              <SelectItem key={p.id} value={p.id} disabled={p.id === playerAId}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                 <FormField
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="playerAScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player A Score (Sets)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 3" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="playerBScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Player B Score (Sets)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 2" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+              {playerA && playerB && (
+                  <FormField
                   control={form.control}
-                  name="playerAScore"
+                  name="winnerId"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Player A Score (Sets)</FormLabel>
+                      <FormItem className="space-y-3">
+                      <FormLabel>Who won?</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 3" {...field} />
+                          <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                          >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                  <RadioGroupItem value={playerA.id} />
+                              </FormControl>
+                              <FormLabel className="font-normal flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                      <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                  </div>
+                                  {playerA.name}
+                              </FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                  <RadioGroupItem value={playerB.id} />
+                              </FormControl>
+                              <FormLabel className="font-normal flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                      <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                  </div>
+                                  {playerB.name}
+                              </FormLabel>
+                          </FormItem>
+                          </RadioGroup>
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
+                      </FormItem>
                   )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="playerBScore"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Player B Score (Sets)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g. 2" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  />
+              )}
 
-            {playerA && playerB && (
-                <FormField
-                control={form.control}
-                name="winnerId"
-                render={({ field }) => (
-                    <FormItem className="space-y-3">
-                    <FormLabel>Who won?</FormLabel>
-                    <FormControl>
-                        <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                        >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                                <RadioGroupItem value={playerA.id} />
-                            </FormControl>
-                            <FormLabel className="font-normal flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                    <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                </div>
-                                {playerA.name}
-                            </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                                <RadioGroupItem value={playerB.id} />
-                            </FormControl>
-                             <FormLabel className="font-normal flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                    <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                </div>
-                                {playerB.name}
-                            </FormLabel>
-                        </FormItem>
-                        </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            )}
-
-              <Button type="submit">Submit Result</Button>
-            </form>
-          </Form>
+                <Button type="submit">Submit Result</Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>

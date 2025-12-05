@@ -9,11 +9,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 export default function LeagueTabs({ league }: { league: League }) {
   const activePlayers = league.players.filter(p => p.status === 'active');
   const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const canRecordMatch = activePlayers.length >= 2;
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
@@ -62,11 +65,24 @@ export default function LeagueTabs({ league }: { league: League }) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Match History</CardTitle>
-            <Button asChild>
-                <Link href={`/leagues/${league.id}/matches/record`}>
-                    <PlusCircle className="mr-2 h-4 w-4"/>Record Match
-                </Link>
-            </Button>
+             <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="inline-block"> 
+                    <Button asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
+                      <Link href={`/leagues/${league.id}/matches/record`}>
+                          <PlusCircle className="mr-2 h-4 w-4"/>Record Match
+                      </Link>
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!canRecordMatch && (
+                  <TooltipContent>
+                    <p>At least 2 active players are needed to record a match.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </CardHeader>
           <CardContent className="space-y-4">
              {sortedMatches.map((match) => (
