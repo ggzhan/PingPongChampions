@@ -94,7 +94,9 @@ if (!g.dataStore) {
 
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
+  // Create a deep copy to avoid mutations affecting the original data store
   const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
+  
   // Augment leagues with active player count
   return Promise.resolve(leagues.map((league: League) => {
     const activePlayerCount = league.players ? league.players.filter(p => p.status === 'active').length : 0;
@@ -161,31 +163,31 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
   const eloHistory: EloHistory[] = [];
-  const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  let runningElo = player.elo;
+  
+  if (matchHistory.length > 0) {
+    const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    let runningElo = player.elo;
 
-  // Trace ELO history backwards from the present
-  for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
-      eloHistory.unshift({
-          date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
-          elo: runningElo
-      });
-      const match = allMatchesChronological[i];
-      const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-      runningElo -= eloChange;
-  }
-  
-  // Add the starting ELO point
-  eloHistory.unshift({
-      date: allMatchesChronological.length > 0
-          ? new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0] // One day before first match
-          : new Date(Date.now() - 86400000).toISOString().split('T')[0], // Default to yesterday if no matches
-      elo: runningElo
-  });
-  
-  // If there are no matches, ELO history should just be the current ELO.
-  if (matchHistory.length === 0) {
-      eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+    // Trace ELO history backwards from the present
+    for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
+        eloHistory.unshift({
+            date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
+            elo: runningElo
+        });
+        const match = allMatchesChronological[i];
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        runningElo -= eloChange;
+    }
+    
+    // Add the starting ELO point
+    eloHistory.unshift({
+        date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], // One day before first match
+        elo: runningElo
+    });
+  } else {
+    // If no matches, ELO history is just one point for today and one for yesterday.
+    eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
+    eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
 
   const headToHead: PlayerStats['headToHead'] = {};
