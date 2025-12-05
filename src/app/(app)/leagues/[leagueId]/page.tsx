@@ -17,12 +17,12 @@ type LeaguePageProps = {
 };
 
 export default function LeaguePage({ params }: LeaguePageProps) {
+  const { leagueId } = params;
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const { leagueId } = params;
 
   useEffect(() => {
     async function fetchLeague() {
