@@ -87,6 +87,22 @@ export default function LeaguePage({ params }: LeaguePageProps) {
     }
   };
 
+  const handleShare = () => {
+    if (league.privacy === 'private' && league.inviteCode) {
+      navigator.clipboard.writeText(league.inviteCode);
+      toast({
+        title: "Invite Code Copied!",
+        description: "The invite code for this private league has been copied to your clipboard.",
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+       toast({
+        title: "Link Copied!",
+        description: "The link to this league has been copied to your clipboard.",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -132,7 +148,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-              <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
+              <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
               {isAdmin && (
                 <Button variant="secondary" asChild>
                   <Link href={`/leagues/${league.id}/admin`}>

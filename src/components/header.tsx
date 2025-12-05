@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trophy, User, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Trophy, User, LogOut, LogIn, UserPlus, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -48,6 +48,7 @@ export default function Header() {
 
   const navLinks = [
     { href: '/leagues', label: 'Leagues' },
+    { href: '/leagues/join', label: 'Join a league' },
   ];
 
   return (

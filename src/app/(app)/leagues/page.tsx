@@ -29,11 +29,6 @@ export default function LeaguesPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/leagues/join">
-                <KeyRound className="mr-2 h-4 w-4" /> Join with Code
-              </Link>
-            </Button>
             <Button asChild>
               <Link href="/leagues/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> Create League
@@ -64,11 +59,6 @@ export default function LeaguesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold font-headline">Leagues</h1>
         <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/leagues/join">
-                <KeyRound className="mr-2 h-4 w-4" /> Join with Code
-              </Link>
-            </Button>
             <Button asChild>
               <Link href="/leagues/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> Create League
