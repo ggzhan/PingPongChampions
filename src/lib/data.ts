@@ -5,10 +5,10 @@ import type { League, User, Match, Player, PlayerStats } from './types';
 
 let users: User[] = [
   { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
-  { id: 'user-2', name: 'Bob', email: 'bob@example.com' },
-  { id: 'user-3', name: 'Charlie', email: 'charlie@example.com' },
-  { id: 'user-4', name: 'Diana', email: 'diana@example.com' },
-  { id: 'user-5', name: 'Eve', email: 'eve@example.com' },
+  { id: 'user-2', name: 'Bob', email: 'bob@example.com', showEmail: false },
+  { id: 'user-3', name: 'Charlie', email: 'charlie@example.com', showEmail: false },
+  { id: 'user-4', name: 'Diana', email: 'diana@example.com', showEmail: false },
+  { id: 'user-5', name: 'Eve', email: 'eve@example.com', showEmail: false },
 ];
 
 const initialPlayers: Player[] = users.slice(0, 4).map(user => ({
@@ -57,9 +57,9 @@ let leagues: League[] = [
     adminIds: ['user-1'],
     players: [
       { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0 },
-      { ...initialPlayers[1], elo: 984, wins: 0, losses: 1 },
-      { ...initialPlayers[2], elo: 984, wins: 0, losses: 1 },
-      { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0 },
+      { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false },
+      { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false },
+      { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false },
     ],
     matches: initialMatches,
   },
@@ -76,7 +76,7 @@ let leagues: League[] = [
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
   // In a real app, you'd fetch this from a database
-  return Promise.resolve(leagues);
+  return Promise.resolve(JSON.parse(JSON.stringify(leagues)));
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
@@ -94,7 +94,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     id: user.id,
     name: user.name,
     email: user.email,
-    showEmail: user.showEmail,
+    showEmail: !!user.showEmail,
     elo: 1000,
     wins: 0,
     losses: 0,
@@ -107,7 +107,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     matches: [],
   };
   leagues.push(newLeague);
-  return Promise.resolve(newLeague);
+  return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
 }
 
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
@@ -121,22 +121,27 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
 
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(b.createdAt).getTime());
     
-  const eloHistory = [{ date: '2023-01-01', elo: 1000 }];
+  const eloHistory: {date: string, elo: number}[] = [];
   let currentElo = 1000;
   
-  (league.matches || [])
+  const playerMatches = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .forEach(match => {
-      const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-      currentElo += eloChange;
-      eloHistory.push({
-        date: new Date(match.createdAt).toISOString().split('T')[0],
-        elo: currentElo
-      });
-  });
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  if (playerMatches.length > 0) {
+      eloHistory.push({ date: '2023-01-01', elo: 1000 });
+      playerMatches.forEach(match => {
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        currentElo += eloChange;
+        eloHistory.push({
+          date: new Date(match.createdAt).toISOString().split('T')[0],
+          elo: currentElo
+        });
+    });
+  }
+
 
   const headToHead: PlayerStats['headToHead'] = {};
   matchHistory.forEach(match => {
@@ -177,6 +182,7 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
       elo: 1000,
       wins: 0,
       losses: 0,
+      showEmail: !!user.showEmail,
     };
     if (!league.players) league.players = [];
     league.players.push(newPlayer);
