@@ -163,26 +163,35 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  // Find the ELO before the first recorded match for this player in this league
-  const eloChangesSum = allMatchesChronological.reduce((acc, match) => {
-    return acc + (match.playerAId === playerId ? match.eloChangeA : match.eloChangeB);
-  }, 0);
-  
-  const initialElo = player.elo - eloChangesSum;
-  let runningElo = initialElo;
-  
-  if (allMatchesChronological.length === 0) {
-      eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+  if (allMatchesChronological.length > 0) {
+    // Calculate initial ELO by working backwards from current ELO
+    const eloChangesSum = allMatchesChronological.reduce((acc, match) => {
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        return acc + eloChange;
+    }, 0);
+    const initialElo = player.elo - eloChangesSum;
+    let runningElo = initialElo;
+
+    // Add a point for before the first match
+    eloHistory.push({ 
+        date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], 
+        elo: initialElo 
+    });
+
+    // Add a point for each match
+    allMatchesChronological.forEach(match => {
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        runningElo += eloChange;
+        eloHistory.push({
+          date: new Date(match.createdAt).toISOString().split('T')[0],
+          elo: runningElo
+        });
+    });
   } else {
-      eloHistory.push({ date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], elo: initialElo });
-      allMatchesChronological.forEach(match => {
-          const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-          runningElo += eloChange;
-          eloHistory.push({
-            date: new Date(match.createdAt).toISOString().split('T')[0],
-            elo: runningElo
-          });
-      });
+    // If no matches, just show current ELO on a single date point.
+    // Use two points with the same ELO to draw a flat line.
+    eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
+    eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
 
 
