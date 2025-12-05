@@ -1,11 +1,12 @@
 
-
 import { getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User as UserIcon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+
+export const dynamic = 'force-dynamic';
 
 type PlayerPageProps = {
   params: { leagueId: string, playerId: string };
