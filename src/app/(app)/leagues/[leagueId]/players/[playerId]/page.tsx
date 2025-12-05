@@ -2,7 +2,7 @@
 import { getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User as UserIcon, ArrowLeft, Trophy, Sword, Shield, CalendarIcon } from "lucide-react";
+import { User as UserIcon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

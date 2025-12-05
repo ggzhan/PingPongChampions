@@ -197,11 +197,6 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     return undefined;
   }
   
-  const hasPlayed = player.wins > 0 || player.losses > 0;
-  if (!hasPlayed) {
-    return undefined;
-  }
-
   const sortedPlayers = [...league.players]
     .filter(p => p.status === 'active')
     .sort((a, b) => b.elo - a.elo);
@@ -386,5 +381,3 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
-
-    
