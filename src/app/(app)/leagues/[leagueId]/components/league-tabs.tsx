@@ -4,12 +4,60 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import type { League } from "@/lib/types";
+import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+
+const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
+  const hasPlayed = player.wins > 0 || player.losses > 0;
+
+  if (!hasPlayed) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <span className="font-medium">{player.name}</span>
+      </div>
+    );
+  }
+
+  return (
+    <Link href={`/leagues/${leagueId}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
+      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+        <UserIcon className="w-4 h-4 text-muted-foreground" />
+      </div>
+      <span className="font-medium">{player.name}</span>
+    </Link>
+  );
+};
+
+const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
+    const hasPlayed = player.wins > 0 || player.losses > 0;
+    const content = (
+         <div className={`flex flex-col items-center gap-2 p-4 border rounded-lg transition-colors ${hasPlayed ? 'hover:bg-accent/10 hover:border-primary/50' : 'opacity-75'}`}>
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                <UserIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <span className="font-semibold">{player.name}</span>
+            <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
+        </div>
+    );
+
+    if (!hasPlayed) {
+        return <TooltipProvider><Tooltip><TooltipTrigger>{content}</TooltipTrigger><TooltipContent><p>Player must play at least one match to view stats.</p></TooltipContent></Tooltip></TooltipProvider>;
+    }
+
+    return (
+        <Link key={player.id} href={`/leagues/${leagueId}/players/${player.id}`}>
+            {content}
+        </Link>
+    );
+};
 
 
 export default function LeagueTabs({ league }: { league: League }) {
@@ -45,12 +93,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                   <TableRow key={player.id}>
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
-                       <Link href={`/leagues/${league.id}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                            <UserIcon className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <span className="font-medium">{player.name}</span>
-                      </Link>
+                      <PlayerLink leagueId={league.id} player={player} />
                     </TableCell>
                     <TableCell className="text-right font-mono">{player.elo}</TableCell>
                     <TableCell className="text-right">{player.wins}/{player.losses}</TableCell>
@@ -133,15 +176,7 @@ export default function LeagueTabs({ league }: { league: League }) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {activePlayers.map(player => (
-                    <Link key={player.id} href={`/leagues/${league.id}/players/${player.id}`}>
-                        <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-accent/10 hover:border-primary/50 transition-colors">
-                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                                <UserIcon className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                            <span className="font-semibold">{player.name}</span>
-                            <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
-                        </div>
-                    </Link>
+                    <PlayerCardLink key={player.id} leagueId={league.id} player={player} />
                 ))}
             </div>
           </CardContent>

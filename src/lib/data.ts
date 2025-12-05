@@ -192,39 +192,38 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
 
     const player = league.players.find(p => p.id === playerId);
     if (!player) return undefined;
+    
+    const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // If there are no matches, there is no stats page to show.
+    if (matchHistory.length === 0) {
+      return undefined;
+    }
 
     const activePlayers = league.players.filter(p => p.status === 'active');
     const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
     const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
 
-    const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // --- Start of ELO History Generation ---
+    // --- ELO History Generation ---
     const allMatchesForPlayerChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     
-    // Base ELO history. Ensures the chart has at least two points to draw a line.
-    const joinDate = player.createdAt ? new Date(player.createdAt) : new Date();
+    const eloHistory: EloHistory[] = [];
+    const joinDate = player.createdAt ? new Date(player.createdAt) : new Date(allMatchesForPlayerChronological[0].createdAt);
     const dayBeforeJoin = new Date(joinDate);
     dayBeforeJoin.setDate(dayBeforeJoin.getDate() - 1);
-
-    const historyMap = new Map<string, number>();
-    historyMap.set(dayBeforeJoin.toISOString().split('T')[0], 1000);
+    eloHistory.push({ date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 });
     
     let runningElo = 1000;
     for (const match of allMatchesForPlayerChronological) {
         const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
         runningElo += eloChange;
-        const matchDate = new Date(match.createdAt).toISOString().split('T')[0];
-        historyMap.set(matchDate, runningElo);
+        eloHistory.push({ date: new Date(match.createdAt).toISOString().split('T')[0], elo: runningElo });
     }
     
-    // Ensure the current ELO is the last point
-    historyMap.set(new Date().toISOString().split('T')[0], player.elo);
-
-    const eloHistory: EloHistory[] = Array.from(historyMap.entries())
-        .map(([date, elo]) => ({ date, elo }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (eloHistory[eloHistory.length - 1].elo !== player.elo) {
+        eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+    }
     // --- End of ELO History Generation ---
 
     const headToHead: PlayerStats['headToHead'] = {};
