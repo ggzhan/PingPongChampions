@@ -47,7 +47,7 @@ export default function Header() {
   const pathname = usePathname();
 
   const navLinks = [
-    { href: '/leagues', label: 'Leagues' },
+    { href: '/', label: 'Leagues' },
   ];
 
   return (
@@ -64,7 +64,7 @@ export default function Header() {
               href={link.href}
               className={cn(
                 "transition-colors hover:text-primary",
-                pathname === link.href ? "text-primary" : "text-muted-foreground"
+                (pathname === link.href || (link.href === "/" && pathname.startsWith("/leagues"))) ? "text-primary" : "text-muted-foreground"
               )}
             >
               {link.label}
@@ -123,4 +123,3 @@ export default function Header() {
     </header>
   );
 }
-

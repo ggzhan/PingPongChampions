@@ -21,7 +21,7 @@ export default function LoginPage() {
     // Mock login
     if (typeof window !== "undefined") {
       localStorage.setItem("isLoggedIn", "true");
-      router.push("/leagues");
+      router.push("/");
     }
   };
 

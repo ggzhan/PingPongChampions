@@ -148,7 +148,7 @@ export default function LeagueAdminPage() {
         title: "League Deleted",
         description: `The league "${league.name}" has been permanently deleted.`,
       });
-      router.push('/leagues');
+      router.push('/');
       router.refresh();
     } catch (error) {
         toast({
@@ -312,5 +312,3 @@ export default function LeagueAdminPage() {
     </div>
   );
 }
-
-    

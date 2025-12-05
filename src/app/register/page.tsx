@@ -21,7 +21,7 @@ export default function RegisterPage() {
     // Mock registration
     if (typeof window !== "undefined") {
       localStorage.setItem("isLoggedIn", "true");
-      router.push("/leagues");
+      router.push("/");
     }
   };
 
