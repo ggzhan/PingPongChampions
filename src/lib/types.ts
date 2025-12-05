@@ -1,7 +1,9 @@
+
 export type User = {
   id: string;
   name: string;
   email: string;
+  showEmail?: boolean;
 };
 
 export type Player = User & {

@@ -22,12 +22,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useUser } from "@/context/user-context";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getLeagues } from "@/lib/data";
+import type { League } from "@/lib/types";
+import Link from "next/link";
 
-
-const userLeagues = [
-    { id: 'league-1', name: 'Office Champions League', rank: 2, elo: 1016 },
-];
 
 const accountFormSchema = z.object({
   name: z.string().min(2, {
@@ -56,6 +55,29 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 export default function ProfilePage() {
     const { toast } = useToast();
     const { user, updateUser } = useUser();
+    const [userLeagues, setUserLeagues] = useState<any[]>([]);
+
+    useEffect(() => {
+      async function fetchUserLeagues() {
+        if (user) {
+          const allLeagues = await getLeagues();
+          const memberLeagues = allLeagues
+            .filter(league => league.players.some(p => p.id === user.id))
+            .map(league => {
+              const player = league.players.find(p => p.id === user.id);
+              const rank = [...league.players].sort((a,b) => b.elo - a.elo).findIndex(p => p.id === user.id) + 1;
+              return {
+                id: league.id,
+                name: league.name,
+                rank: rank,
+                elo: player?.elo,
+              }
+            });
+            setUserLeagues(memberLeagues);
+        }
+      }
+      fetchUserLeagues();
+    }, [user]);
 
     const accountForm = useForm<AccountFormValues>({
         resolver: zodResolver(accountFormSchema),
@@ -86,11 +108,13 @@ export default function ProfilePage() {
     });
 
     function onAccountSubmit(data: AccountFormValues) {
-        updateUser(data);
-        toast({
-            title: "Account Updated",
-            description: "Your account settings have been saved.",
-        });
+        if(user) {
+            updateUser({id: user.id, ...data});
+            toast({
+                title: "Account Updated",
+                description: "Your account settings have been saved.",
+            });
+        }
     }
 
     function onPasswordSubmit(data: PasswordFormValues) {
@@ -121,7 +145,9 @@ export default function ProfilePage() {
                                         <p className="font-semibold">{league.name}</p>
                                         <p className="text-sm text-muted-foreground">Rank: #{league.rank}, ELO: {league.elo}</p>
                                     </div>
-                                    <Button variant="outline" size="sm">View</Button>
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href={`/leagues/${league.id}`}>View</Link>
+                                    </Button>
                                 </li>
                             ))}
                         </ul>

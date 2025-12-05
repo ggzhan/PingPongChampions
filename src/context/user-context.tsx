@@ -5,6 +5,7 @@ import { createContext, useContext, useState, ReactNode, FC } from 'react';
 
 // Define the shape of the user object
 interface User {
+  id: string;
   name: string;
   email: string;
   showEmail: boolean;
@@ -21,6 +22,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // Mock user data for initialization
 const mockUser: User = {
+  id: 'user-1', // This user is 'AlpacaRacer' in data.ts
   name: 'AlpacaRacer',
   email: 'john.doe@example.com',
   showEmail: false,

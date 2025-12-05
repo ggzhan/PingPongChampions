@@ -1,9 +1,10 @@
+
 // In a real application, this would be a database.
 // For this example, we're using an in-memory store.
 import type { League, User, Match, Player, PlayerStats } from './types';
 
-const users: User[] = [
-  { id: 'user-1', name: 'Alice', email: 'alice@example.com' },
+let users: User[] = [
+  { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com' },
   { id: 'user-2', name: 'Bob', email: 'bob@example.com' },
   { id: 'user-3', name: 'Charlie', email: 'charlie@example.com' },
   { id: 'user-4', name: 'Diana', email: 'diana@example.com' },
@@ -23,7 +24,7 @@ const initialMatches: Match[] = [
     leagueId: 'league-1',
     playerAId: 'user-1',
     playerBId: 'user-2',
-    playerAName: 'Alice',
+    playerAName: 'AlpacaRacer',
     playerBName: 'Bob',
     playerAScore: 3,
     playerBScore: 1,
@@ -48,7 +49,7 @@ const initialMatches: Match[] = [
   },
 ];
 
-const leagues: League[] = [
+let leagues: League[] = [
   {
     id: 'league-1',
     name: 'Office Champions League',
@@ -79,7 +80,8 @@ export async function getLeagues(): Promise<League[]> {
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
-  return Promise.resolve(leagues.find(l => l.id === id));
+  const league = leagues.find(l => l.id === id);
+  return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
 }
 
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
@@ -100,7 +102,7 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   
   league.matches
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(a.createdAt).getTime())
     .forEach(match => {
       const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
       currentElo += eloChange;
@@ -137,4 +139,47 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     matchHistory,
     headToHead
   };
+}
+
+export async function addUserToLeague(leagueId: string, userId: string): Promise<void> {
+  const league = leagues.find(l => l.id === leagueId);
+  const user = users.find(u => u.id === userId);
+
+  if (league && user && !league.players.some(p => p.id === userId)) {
+    const newPlayer: Player = {
+      ...user,
+      elo: 1000,
+      wins: 0,
+      losses: 0,
+    };
+    league.players.push(newPlayer);
+  }
+  return Promise.resolve();
+}
+
+export async function updateUserInLeagues(user: User): Promise<void> {
+    users = users.map(u => u.id === user.id ? user : u);
+    
+    leagues = leagues.map(league => {
+        return {
+            ...league,
+            players: league.players.map(player => {
+                if (player.id === user.id) {
+                    return { ...player, name: user.name, email: user.email };
+                }
+                return player;
+            }),
+            matches: league.matches.map(match => {
+                if (match.playerAId === user.id) {
+                    match.playerAName = user.name;
+                }
+                if (match.playerBId === user.id) {
+                    match.playerBName = user.name;
+                }
+                return match;
+            })
+        }
+    });
+
+    return Promise.resolve();
 }
