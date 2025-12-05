@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import RefreshButton from "./components/refresh-button";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,15 +27,19 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
 
   return (
     <div className="space-y-6">
-       <Button variant="outline" asChild className="mb-4">
-            <Link href={`/leagues/${leagueId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to League
-            </Link>
-        </Button>
+       <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold font-headline">Player Stats</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+                <Link href={`/leagues/${leagueId}`}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to League
+                </Link>
+            </Button>
+            <RefreshButton />
+          </div>
+       </div>
         
-      <h1 className="text-3xl font-bold font-headline">Player Stats</h1>
-      
       <Card>
         <CardHeader>
             <div className="flex items-center gap-4">
@@ -117,5 +122,3 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     </div>
   );
 }
-
-    
