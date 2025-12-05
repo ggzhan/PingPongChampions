@@ -192,15 +192,10 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
 
   const playerInfo = league.players.find(p => p.id === playerId);
   if (!playerInfo) return undefined;
-
+  
   const allMatchesForPlayer = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-  // Return undefined if the player has no matches and isn't the one viewing their own new profile
-  if (allMatchesForPlayer.length === 0) {
-      // Allow viewing profile if there are no matches
-  }
 
   // --- ELO, W/L, and Head-to-Head Calculation ---
   let currentElo = 1000;
@@ -208,11 +203,11 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   let losses = 0;
   const headToHead: PlayerStats['headToHead'] = {};
   const eloHistory: EloHistory[] = [];
+  
   const joinDate = playerInfo.createdAt ? new Date(playerInfo.createdAt) : new Date();
   const dayBeforeJoin = new Date(joinDate);
   dayBeforeJoin.setDate(dayBeforeJoin.getDate() - 1);
   eloHistory.push({ date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 });
-
 
   allMatchesForPlayer.forEach(match => {
     const isPlayerA = match.playerAId === playerId;
