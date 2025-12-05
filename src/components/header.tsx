@@ -48,7 +48,6 @@ export default function Header() {
 
   const navLinks = [
     { href: '/leagues', label: 'Leagues' },
-    { href: '/leagues/join', label: 'Join a league' },
   ];
 
   return (
@@ -124,3 +123,4 @@ export default function Header() {
     </header>
   );
 }
+

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
+import { getLeagueById, addUserToLeague } from "@/lib/data";
 import { notFound, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import JoinPrivateLeagueForm from "./components/join-private-league-form";
 
 type LeaguePageProps = {
   params: { leagueId: string };
@@ -36,14 +37,15 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchLeague() {
-      const leagueData = await getLeagueById(params.leagueId);
-      if (leagueData) {
-        setLeague(leagueData);
-      }
-      setLoading(false);
+  const fetchLeague = async () => {
+    const leagueData = await getLeagueById(params.leagueId);
+    if (leagueData) {
+      setLeague(leagueData);
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchLeague();
   }, [params.leagueId]);
   
@@ -60,10 +62,9 @@ export default function LeaguePage({ params }: LeaguePageProps) {
 
   const handleJoinLeague = async () => {
     if (user && !isMember && league.privacy === 'public') {
+      await addUserToLeague(league.id, user.id);
       const updatedLeague = await getLeagueById(league.id);
       setLeague(updatedLeague);
-      await addUserToLeague(league.id, user.id);
-      
       toast({
         title: "League Joined!",
         description: `You are now a member of ${league.name}.`,
@@ -74,6 +75,8 @@ export default function LeaguePage({ params }: LeaguePageProps) {
 
   const handleLeaveLeague = async () => {
     if (user && isMember) {
+      // In a real app, you'd likely call an API here.
+      // For now, we'll simulate the update.
       await removePlayerFromLeague(league.id, user.id);
       const updatedLeague = await getLeagueById(league.id);
        if (updatedLeague) {
@@ -88,7 +91,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   };
 
   const handleShare = () => {
-    if (league.privacy === 'private' && league.inviteCode) {
+     if (league.privacy === 'private' && league.inviteCode && (isMember || isAdmin)) {
       navigator.clipboard.writeText(league.inviteCode);
       toast({
         title: "Invite Code Copied!",
@@ -102,6 +105,8 @@ export default function LeaguePage({ params }: LeaguePageProps) {
       });
     }
   };
+  
+  const showJoinForm = user && league.privacy === 'private' && !isMember;
 
   return (
     <div className="space-y-6">
@@ -159,9 +164,15 @@ export default function LeaguePage({ params }: LeaguePageProps) {
             </div>
           </div>
         </CardHeader>
+         {showJoinForm && (
+            <CardContent>
+                <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
+            </CardContent>
+         )}
       </Card>
 
-      <LeagueTabs league={league} />
+      {!showJoinForm && <LeagueTabs league={league} />}
     </div>
   );
 }
+

@@ -103,7 +103,10 @@ if (!g.dataStore) {
 export async function getLeagues(): Promise<League[]> {
   // Create a deep copy to avoid mutations affecting the original data store
   const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
-  return Promise.resolve(leagues);
+  return Promise.resolve(leagues.map(league => ({
+    ...league,
+    activePlayerCount: league.players.filter(p => p.status === 'active').length
+  })));
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
@@ -111,7 +114,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
   return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
 }
 
-export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode'>): Promise<League> {
+export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'>): Promise<League> {
   const user = g.dataStore.users.find(u => u.id === leagueData.adminIds[0]);
   if (!user) {
     throw new Error("Admin user not found");
@@ -274,14 +277,15 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
   return Promise.resolve();
 }
 
-export async function joinLeagueByInviteCode(inviteCode: string, userId: string): Promise<League> {
-    const league = g.dataStore.leagues.find(l => l.inviteCode === inviteCode && l.privacy === 'private');
+export async function joinLeagueByInviteCode(inviteCode: string, userId: string, leagueId: string): Promise<League> {
+    const league = g.dataStore.leagues.find(l => l.id === leagueId && l.inviteCode === inviteCode && l.privacy === 'private');
     if (!league) {
-        throw new Error("Invalid invite code or league is not private.");
+        throw new Error("Invalid invite code or league does not match.");
     }
     await addUserToLeague(league.id, userId);
     return Promise.resolve(JSON.parse(JSON.stringify(league)));
 }
+
 
 export async function removePlayerFromLeague(leagueId: string, userId: string): Promise<void> {
   const league = g.dataStore.leagues.find(l => l.id === leagueId);
@@ -411,3 +415,4 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
+

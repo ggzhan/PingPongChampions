@@ -94,7 +94,7 @@ export default function LeaguesPage() {
               </CardHeader>
               <CardContent className="flex-grow">
                  <div className="text-sm text-muted-foreground">
-                    {league.players.filter(p => p.status === 'active').length} active players
+                    {league.activePlayerCount} active players
                  </div>
               </CardContent>
               <CardFooter>
@@ -109,3 +109,4 @@ export default function LeaguesPage() {
     </div>
   );
 }
+
