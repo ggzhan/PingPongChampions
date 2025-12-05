@@ -13,19 +13,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-  const hasPlayed = player.wins > 0 || player.losses > 0;
-
-  if (!hasPlayed) {
-    return (
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-          <UserIcon className="w-4 h-4 text-muted-foreground" />
-        </div>
-        <span className="font-medium">{player.name}</span>
-      </div>
-    );
-  }
-
   return (
     <Link href={`/leagues/${leagueId}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -37,9 +24,8 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
 };
 
 const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-    const hasPlayed = player.wins > 0 || player.losses > 0;
     const content = (
-         <div className={`flex flex-col items-center gap-2 p-4 border rounded-lg transition-colors ${hasPlayed ? 'hover:bg-accent/10 hover:border-primary/50' : 'opacity-75'}`}>
+         <div className="flex flex-col items-center gap-2 p-4 border rounded-lg transition-colors hover:bg-accent/10 hover:border-primary/50">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                 <UserIcon className="w-8 h-8 text-muted-foreground" />
             </div>
@@ -47,10 +33,6 @@ const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player
             <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
         </div>
     );
-
-    if (!hasPlayed) {
-        return <TooltipProvider><Tooltip><TooltipTrigger>{content}</TooltipTrigger><TooltipContent><p>Player must play at least one match to view stats.</p></TooltipContent></Tooltip></TooltipProvider>;
-    }
 
     return (
         <Link key={player.id} href={`/leagues/${leagueId}/players/${player.id}`}>

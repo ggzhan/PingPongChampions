@@ -104,8 +104,8 @@ export default function RecordMatchPage() {
         title: "Match Recorded!",
         description: "The results have been saved and ELOs updated.",
       });
-      router.push(`/leagues/${league.id}`);
       router.refresh();
+      router.push(`/leagues/${league.id}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -277,5 +277,3 @@ export default function RecordMatchPage() {
     </div>
   );
 }
-
-    

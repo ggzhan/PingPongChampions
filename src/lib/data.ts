@@ -196,11 +196,6 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // If there are no matches, there is no stats page to show.
-    if (matchHistory.length === 0) {
-      return undefined;
-    }
-
     const activePlayers = league.players.filter(p => p.status === 'active');
     const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
     const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
@@ -208,21 +203,32 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     // --- ELO History Generation ---
     const allMatchesForPlayerChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     
-    const eloHistory: EloHistory[] = [];
-    const joinDate = player.createdAt ? new Date(player.createdAt) : new Date(allMatchesForPlayerChronological[0].createdAt);
+    // Start with a baseline history. This ensures the chart can always render, even with 0 matches.
+    const joinDate = player.createdAt ? new Date(player.createdAt) : new Date();
     const dayBeforeJoin = new Date(joinDate);
     dayBeforeJoin.setDate(dayBeforeJoin.getDate() - 1);
-    eloHistory.push({ date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 });
+
+    const eloHistory: EloHistory[] = [
+        { date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 },
+        { date: new Date().toISOString().split('T')[0], elo: player.elo }
+    ];
     
-    let runningElo = 1000;
-    for (const match of allMatchesForPlayerChronological) {
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        runningElo += eloChange;
-        eloHistory.push({ date: new Date(match.createdAt).toISOString().split('T')[0], elo: runningElo });
-    }
-    
-    if (eloHistory[eloHistory.length - 1].elo !== player.elo) {
-        eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+    // If there are matches, build the detailed history
+    if (allMatchesForPlayerChronological.length > 0) {
+        eloHistory.length = 0; // Clear the baseline
+        eloHistory.push({ date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 });
+        
+        let runningElo = 1000;
+        for (const match of allMatchesForPlayerChronological) {
+            const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+            runningElo += eloChange;
+            eloHistory.push({ date: new Date(match.createdAt).toISOString().split('T')[0], elo: runningElo });
+        }
+        
+        // Ensure current ELO is the last point if it differs from the last match
+        if (eloHistory[eloHistory.length - 1].elo !== player.elo) {
+            eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+        }
     }
     // --- End of ELO History Generation ---
 
