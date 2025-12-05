@@ -130,13 +130,25 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     wins: 0,
     losses: 0,
     status: 'active'
+  };
+
+  // Add a dummy player to ensure there's more than one player for stats calculations.
+  const ghostPlayer: Player = {
+      id: 'ghost-player',
+      name: 'Training Bot',
+      email: '',
+      showEmail: false,
+      elo: 1000,
+      wins: 0,
+      losses: 0,
+      status: 'inactive'
   }
 
   const newLeague: League = {
     id: `league-${Date.now()}`,
     ...leagueData,
     inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : undefined,
-    players: [newPlayer],
+    players: [newPlayer, ghostPlayer],
     matches: [],
   };
   g.dataStore.leagues.push(newLeague);
