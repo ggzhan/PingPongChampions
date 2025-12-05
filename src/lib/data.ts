@@ -11,97 +11,95 @@ declare global {
   }
 }
 
-const initialUsers: User[] = [
-  { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
-  { id: 'user-2', name: 'Bob', email: 'bob@example.com', showEmail: false },
-  { id: 'user-3', name: 'Charlie', email: 'charlie@example.com', showEmail: false },
-  { id: 'user-4', name: 'Diana', email: 'diana@example.com', showEmail: false },
-  { id: 'user-5', name: 'Eve', email: 'eve@example.com', showEmail: false },
-];
-
-const initialPlayers: Player[] = initialUsers.slice(0, 4).map(user => ({
-  ...user,
-  elo: 1000,
-  wins: 0,
-  losses: 0,
-  status: 'active'
-}));
-
-const initialMatches: Match[] = [
-  {
-    id: 'match-1',
-    leagueId: 'league-1',
-    playerAId: 'user-1',
-    playerBId: 'user-2',
-    playerAName: 'AlpacaRacer',
-    playerBName: 'Bob',
-    playerAScore: 3,
-    playerBScore: 1,
-    winnerId: 'user-1',
-    eloChangeA: 16,
-    eloChangeB: -16,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'match-2',
-    leagueId: 'league-1',
-    playerAId: 'user-3',
-    playerBId: 'user-4',
-    playerAName: 'Charlie',
-    playerBName: 'Diana',
-    playerAScore: 2,
-    playerBScore: 3,
-    winnerId: 'user-4',
-    eloChangeA: -16,
-    eloChangeB: 16,
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const initialLeagues: League[] = [
-  {
-    id: 'league-1',
-    name: 'Office Champions League',
-    description: 'The official ping pong league for the office. Settle your disputes over the table.',
-    adminIds: ['user-1'],
-    players: [
-      { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0, status: 'active' },
-      { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
-      { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
-      { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false, status: 'active' },
-    ],
-    matches: initialMatches,
-  },
-  {
-    id: 'league-2',
-    name: 'Weekend Warriors',
-    description: 'A casual league for weekend games.',
-    adminIds: ['user-1', 'user-3'],
-    players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
-    matches: [],
-  }
-];
-
 const g = globalThis as unknown as { dataStore: { users: User[], leagues: League[] } };
 
-if (process.env.NODE_ENV === 'production') {
+if (!g.dataStore) {
+  const initialUsers: User[] = [
+    { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
+    { id: 'user-2', name: 'Bob', email: 'bob@example.com', showEmail: false },
+    { id: 'user-3', name: 'Charlie', email: 'charlie@example.com', showEmail: false },
+    { id: 'user-4', name: 'Diana', email: 'diana@example.com', showEmail: false },
+    { id: 'user-5', name: 'Eve', email: 'eve@example.com', showEmail: false },
+  ];
+
+  const initialPlayers: Player[] = initialUsers.slice(0, 4).map(user => ({
+    ...user,
+    elo: 1000,
+    wins: 0,
+    losses: 0,
+    status: 'active'
+  }));
+
+  const initialMatches: Match[] = [
+    {
+      id: 'match-1',
+      leagueId: 'league-1',
+      playerAId: 'user-1',
+      playerBId: 'user-2',
+      playerAName: 'AlpacaRacer',
+      playerBName: 'Bob',
+      playerAScore: 3,
+      playerBScore: 1,
+      winnerId: 'user-1',
+      eloChangeA: 16,
+      eloChangeB: -16,
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'match-2',
+      leagueId: 'league-1',
+      playerAId: 'user-3',
+      playerBId: 'user-4',
+      playerAName: 'Charlie',
+      playerBName: 'Diana',
+      playerAScore: 2,
+      playerBScore: 3,
+      winnerId: 'user-4',
+      eloChangeA: -16,
+      eloChangeB: 16,
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  const initialLeagues: League[] = [
+    {
+      id: 'league-1',
+      name: 'Office Champions League',
+      description: 'The official ping pong league for the office. Settle your disputes over the table.',
+      adminIds: ['user-1'],
+      players: [
+        { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0, status: 'active' },
+        { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
+        { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
+        { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false, status: 'active' },
+      ],
+      matches: initialMatches,
+    },
+    {
+      id: 'league-2',
+      name: 'Weekend Warriors',
+      description: 'A casual league for weekend games.',
+      adminIds: ['user-1', 'user-3'],
+      players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
+      matches: [],
+    }
+  ];
+
   g.dataStore = {
     users: initialUsers,
     leagues: initialLeagues
   };
-} else {
-  if (!g.dataStore) {
-    g.dataStore = {
-      users: initialUsers,
-      leagues: initialLeagues
-    };
-  }
 }
+
 
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
-  // In a real app, you'd fetch this from a database
-  return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues)));
+  const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
+  // Augment leagues with active player count
+  return Promise.resolve(leagues.map((league: League) => ({
+    ...league,
+    activePlayerCount: league.players.filter(p => p.status === 'active').length,
+  })));
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {

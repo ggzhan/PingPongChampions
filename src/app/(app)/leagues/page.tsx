@@ -44,7 +44,7 @@ export default async function LeaguesPage() {
                 <div className="flex items-center text-sm text-muted-foreground space-x-4">
                   <div className="flex items-center">
                     <Users className="mr-1.5 h-4 w-4" />
-                    <span>{league.players.filter(p => p.status === 'active').length} Players</span>
+                    <span>{league.activePlayerCount} Players</span>
                   </div>
                   <div className="flex items-center">
                     <Swords className="mr-1.5 h-4 w-4" />
