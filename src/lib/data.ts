@@ -215,10 +215,13 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     }
     
     // Add the starting ELO point
-    eloHistory.unshift({
-        date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], // One day before first match
-        elo: runningElo
-    });
+    if (allMatchesChronological.length > 0) {
+      eloHistory.unshift({
+          date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], // One day before first match
+          elo: runningElo
+      });
+    }
+
   } else {
     // If no matches, ELO history is just one point for today and one for yesterday.
     eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
@@ -415,5 +418,6 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
+
 
 
