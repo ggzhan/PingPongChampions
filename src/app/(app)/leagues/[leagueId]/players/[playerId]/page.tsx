@@ -4,15 +4,33 @@ import { getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUp, ArrowDown, User as UserIcon } from "lucide-react";
+import { ArrowUp, ArrowDown, User as UserIcon, ArrowLeft } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import EloChart from "./components/elo-chart";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import type { Metadata } from 'next';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type PlayerPageProps = {
   params: { leagueId: string, playerId: string };
 };
+
+export async function generateMetadata({ params }: PlayerPageProps): Promise<Metadata> {
+  const { leagueId, playerId } = params;
+  const stats = await getPlayerStats(leagueId, playerId);
+
+  if (!stats) {
+    return {
+      title: "Player Not Found",
+    };
+  }
+
+  return {
+    title: `${stats.player.name} | Player Stats`,
+  };
+}
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { leagueId, playerId } = params;
@@ -26,6 +44,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
 
   return (
     <div className="space-y-6">
+       <Button variant="outline" asChild className="mb-4">
+            <Link href={`/leagues/${leagueId}`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to League
+            </Link>
+        </Button>
       <Card>
         <CardHeader className="flex flex-col md:flex-row items-center gap-6">
           <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">

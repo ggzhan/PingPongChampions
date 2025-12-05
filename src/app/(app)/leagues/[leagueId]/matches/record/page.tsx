@@ -30,6 +30,7 @@ import { useState, useEffect } from "react";
 import type { Player, League } from "@/lib/types";
 import { ArrowLeft, User as UserIcon, Users } from "lucide-react";
 import Link from 'next/link';
+import { useApp } from "@/context/app-context";
 
 const formSchema = z.object({
   playerAId: z.string().min(1, "Player A is required."),
@@ -60,6 +61,7 @@ export default function RecordMatchPage() {
   const { toast } = useToast();
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
+  const { refresh } = useApp();
 
   useEffect(() => {
     async function fetchLeague() {
@@ -104,7 +106,7 @@ export default function RecordMatchPage() {
         title: "Match Recorded!",
         description: "The results have been saved and ELOs updated.",
       });
-      router.refresh();
+      refresh();
       router.push(`/leagues/${league.id}`);
     } catch (error) {
       toast({

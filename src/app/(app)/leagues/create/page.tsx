@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
 import { Lock, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useApp } from "@/context/app-context";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -45,6 +46,7 @@ export default function CreateLeaguePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
+  const { refresh } = useApp();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,7 +82,7 @@ export default function CreateLeaguePage() {
         title: "League Created!",
         description: `"${values.name}" is ready for players.`,
       });
-      router.refresh();
+      refresh();
       router.push(`/leagues/${newLeague.id}`);
     } catch (error) {
        toast({
