@@ -8,12 +8,28 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import RefreshButton from "./components/refresh-button";
+import { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
 
 type PlayerPageProps = {
   params: { leagueId: string, playerId: string };
 };
+
+export async function generateMetadata({ params }: PlayerPageProps): Promise<Metadata> {
+  const { leagueId, playerId } = params;
+  const stats = await getPlayerStats(leagueId, playerId);
+
+  if (!stats) {
+    return {
+      title: "Player Not Found",
+    };
+  }
+
+  return {
+    title: `${stats.player.name} | Player Stats`,
+  };
+}
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { leagueId, playerId } = params;
