@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { joinLeagueByInviteCode } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
@@ -96,4 +95,3 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
     </>
   );
 }
-

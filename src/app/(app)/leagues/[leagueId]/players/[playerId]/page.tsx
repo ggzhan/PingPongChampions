@@ -14,7 +14,8 @@ type PlayerPageProps = {
 };
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
-  const stats = await getPlayerStats(params.leagueId, params.playerId);
+  const { leagueId, playerId } = params;
+  const stats = await getPlayerStats(leagueId, playerId);
 
   if (!stats) {
     notFound();

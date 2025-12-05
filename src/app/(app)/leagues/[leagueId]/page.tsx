@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { League } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -31,24 +31,25 @@ type LeaguePageProps = {
 };
 
 export default function LeaguePage({ params }: LeaguePageProps) {
+  const { leagueId } = params;
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
-  const fetchLeague = async () => {
+  const fetchLeague = useCallback(async () => {
     setLoading(true);
-    const leagueData = await getLeagueById(params.leagueId);
+    const leagueData = await getLeagueById(leagueId);
     if (leagueData) {
       setLeague(leagueData);
     }
     setLoading(false);
-  };
+  }, [leagueId]);
 
   useEffect(() => {
     fetchLeague();
-  }, [params.leagueId]);
+  }, [fetchLeague]);
   
   if (loading) {
     return <div>Loading...</div>; // Or a skeleton loader

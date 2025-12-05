@@ -54,6 +54,7 @@ const formSchema = z.object({
 });
 
 export default function LeagueAdminPage({ params }: { params: { leagueId: string } }) {
+  const { leagueId } = params;
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
@@ -75,7 +76,9 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
 
    useEffect(() => {
     async function fetchLeague() {
-      const leagueData = await getLeagueById(params.leagueId);
+      if (!user) return;
+      
+      const leagueData = await getLeagueById(leagueId);
       if (leagueData) {
         setLeague(leagueData);
         setInviteCode(leagueData.inviteCode);
@@ -86,9 +89,9 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
             leaderboardVisible: leagueData.leaderboardVisible ?? true,
         });
 
-        if (!user || !leagueData.adminIds.includes(user.id)) {
+        if (!leagueData.adminIds.includes(user.id)) {
             toast({ variant: "destructive", title: "Unauthorized", description: "You are not an admin for this league." });
-            router.push(`/leagues/${params.leagueId}`);
+            router.push(`/leagues/${leagueId}`);
         }
 
       } else {
@@ -97,10 +100,8 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
       setLoading(false);
     }
 
-    if (user) {
-        fetchLeague();
-    }
-  }, [params.leagueId, user, router, toast, form]);
+    fetchLeague();
+  }, [leagueId, user, router, toast, form]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

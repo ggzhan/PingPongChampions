@@ -54,6 +54,7 @@ const formSchema = z.object({
 
 
 export default function RecordMatchPage({ params }: { params: { leagueId: string } }) {
+  const { leagueId } = params;
   const router = useRouter();
   const { toast } = useToast();
   const [league, setLeague] = useState<League | null>(null);
@@ -61,7 +62,7 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
 
   useEffect(() => {
     async function fetchLeague() {
-      const leagueData = await getLeagueById(params.leagueId);
+      const leagueData = await getLeagueById(leagueId);
       if (leagueData) {
         setLeague(leagueData);
       } else {
@@ -70,7 +71,7 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
       setLoading(false);
     }
     fetchLeague();
-  }, [params.leagueId]);
+  }, [leagueId]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
