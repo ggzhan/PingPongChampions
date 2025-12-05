@@ -2,7 +2,7 @@
 // In a real application, this would be a database.
 // For this example, we're using an in-memory store.
 // We attach it to the global object to prevent it from being cleared on hot-reloads.
-import type { League, User, Match, Player, PlayerStats } from './types';
+import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
 
 declare global {
   var dataStore: {
@@ -156,29 +156,23 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-  const eloHistory: {date: string, elo: number}[] = [];
+  const eloHistory: EloHistory[] = [];
   
-  // To reconstruct history, we should start from the beginning.
-  const allMatchesChronological = (league.matches || [])
-    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   if (allMatchesChronological.length > 0) {
-    // Calculate initial ELO by working backwards from current ELO
     const eloChangesSum = allMatchesChronological.reduce((acc, match) => {
         const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
         return acc + eloChange;
     }, 0);
-    const initialElo = player.elo - eloChangesSum;
+    let initialElo = player.elo - eloChangesSum;
     let runningElo = initialElo;
 
-    // Add a point for before the first match
     eloHistory.push({ 
         date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], 
         elo: initialElo 
     });
 
-    // Add a point for each match
     allMatchesChronological.forEach(match => {
         const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
         runningElo += eloChange;
@@ -188,12 +182,9 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
         });
     });
   } else {
-    // If no matches, just show current ELO on a single date point.
-    // Use two points with the same ELO to draw a flat line.
     eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
     eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
-
 
   const headToHead: PlayerStats['headToHead'] = {};
   matchHistory.forEach(match => {
@@ -212,7 +203,6 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
       headToHead[opponentId].losses++;
     }
   });
-
 
   return Promise.resolve({
     player,
