@@ -1,5 +1,4 @@
 
-
 // In a real application, this would be a database.
 // For this example, we're using an in-memory store.
 // We attach it to the global object to prevent it from being cleared on hot-reloads.
@@ -82,36 +81,35 @@ const initialLeagues: League[] = [
   }
 ];
 
+const g = globalThis as unknown as { dataStore: { users: User[], leagues: League[] } };
+
 if (process.env.NODE_ENV === 'production') {
-  global.dataStore = {
+  g.dataStore = {
     users: initialUsers,
     leagues: initialLeagues
   };
 } else {
-  if (!global.dataStore) {
-    global.dataStore = {
+  if (!g.dataStore) {
+    g.dataStore = {
       users: initialUsers,
       leagues: initialLeagues
     };
   }
 }
 
-const { users, leagues } = global.dataStore;
-
-
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
   // In a real app, you'd fetch this from a database
-  return Promise.resolve(JSON.parse(JSON.stringify(global.dataStore.leagues)));
+  return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues)));
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
-  const league = global.dataStore.leagues.find(l => l.id === id);
+  const league = g.dataStore.leagues.find(l => l.id === id);
   return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
 }
 
 export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches'>): Promise<League> {
-  const user = global.dataStore.users.find(u => u.id === leagueData.adminIds[0]);
+  const user = g.dataStore.users.find(u => u.id === leagueData.adminIds[0]);
   if (!user) {
     throw new Error("Admin user not found");
   }
@@ -132,7 +130,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     players: [newPlayer],
     matches: [],
   };
-  global.dataStore.leagues.push(newLeague);
+  g.dataStore.leagues.push(newLeague);
   return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
 }
 
@@ -147,7 +145,7 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
 
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
   const eloHistory: {date: string, elo: number}[] = [];
   
@@ -155,9 +153,23 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   
-  let runningElo = 1000;
-  const reversedMatches = [...playerMatches].reverse();
-  reversedMatches.forEach(match => {
+  let runningElo = 1000; // Starting ELO
+  
+  // To reconstruct history, we should start from the beginning.
+  const allMatchesChronological = (league.matches || [])
+    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  // Let's find the ELO before the first recorded match for this player in this league
+  const initialElo = player.elo - allMatchesChronological.reduce((acc, match) => {
+    return acc + (match.playerAId === playerId ? match.eloChangeA : match.eloChangeB);
+  }, 0);
+  
+  runningElo = initialElo;
+  eloHistory.push({ date: new Date(0).toISOString().split('T')[0], elo: runningElo });
+
+
+  allMatchesChronological.forEach(match => {
       const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
       runningElo += eloChange;
       eloHistory.push({
@@ -166,7 +178,9 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
       });
   });
 
-  if (eloHistory.length === 0) {
+  // If there's still no history, just show current elo
+  if (eloHistory.length <= 1) {
+    eloHistory.splice(0, eloHistory.length); // Clear array
     eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
 
@@ -200,8 +214,8 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
 }
 
 export async function addUserToLeague(leagueId: string, userId: string): Promise<void> {
-  const league = global.dataStore.leagues.find(l => l.id === leagueId);
-  const user = global.dataStore.users.find(u => u.id === userId);
+  const league = g.dataStore.leagues.find(l => l.id === leagueId);
+  const user = g.dataStore.users.find(u => u.id === userId);
 
   if (league && user && !league.players.some(p => p.id === userId)) {
     const newPlayer: Player = {
@@ -218,9 +232,9 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
 }
 
 export async function updateUserInLeagues(user: User): Promise<void> {
-    global.dataStore.users = global.dataStore.users.map(u => u.id === user.id ? {...u, ...user} : u);
+    g.dataStore.users = g.dataStore.users.map(u => u.id === user.id ? {...u, ...user} : u);
     
-    global.dataStore.leagues = global.dataStore.leagues.map(league => {
+    g.dataStore.leagues = g.dataStore.leagues.map(league => {
         return {
             ...league,
             players: league.players.map(player => {
