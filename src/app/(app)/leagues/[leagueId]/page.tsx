@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getLeagueById, addUserToLeague } from "@/lib/data";
+import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
 import { notFound, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const { toast } = useToast();
 
   const fetchLeague = async () => {
+    setLoading(true);
     const leagueData = await getLeagueById(params.leagueId);
     if (leagueData) {
       setLeague(leagueData);
@@ -63,30 +64,22 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const handleJoinLeague = async () => {
     if (user && !isMember && league.privacy === 'public') {
       await addUserToLeague(league.id, user.id);
-      const updatedLeague = await getLeagueById(league.id);
-      setLeague(updatedLeague);
+      fetchLeague();
       toast({
         title: "League Joined!",
         description: `You are now a member of ${league.name}.`,
       });
-      router.refresh(); 
     }
   };
 
   const handleLeaveLeague = async () => {
     if (user && isMember) {
-      // In a real app, you'd likely call an API here.
-      // For now, we'll simulate the update.
       await removePlayerFromLeague(league.id, user.id);
-      const updatedLeague = await getLeagueById(league.id);
-       if (updatedLeague) {
-        setLeague(updatedLeague);
-      }
+      fetchLeague();
       toast({
         title: "You have left the league.",
         description: `You are no longer a member of ${league.name}.`,
       });
-      router.refresh();
     }
   };
 
@@ -175,4 +168,3 @@ export default function LeaguePage({ params }: LeaguePageProps) {
     </div>
   );
 }
-
