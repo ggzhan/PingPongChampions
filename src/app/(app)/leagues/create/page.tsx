@@ -149,20 +149,22 @@ export default function CreateLeaguePage() {
                                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
                                 >
                                   <FormItem>
-                                    <RadioGroupItem value="public" id="public" className="sr-only" />
-                                     <Label htmlFor="public" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                     <Label
+                                        htmlFor="public"
+                                        className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                     >
+                                        <RadioGroupItem value="public" id="public" className="sr-only" />
                                         <Globe className="mb-3 h-6 w-6" />
                                         Public
                                         <p className="text-sm font-normal text-muted-foreground mt-2 text-center">Anyone can find and join this league.</p>
                                     </Label>
                                   </FormItem>
                                   <FormItem>
-                                    <RadioGroupItem
-                                      value="private"
-                                      id="private"
-                                      className="sr-only"
-                                    />
-                                    <Label htmlFor="private" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                    <Label
+                                      htmlFor="private"
+                                      className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                    >
+                                        <RadioGroupItem value="private" id="private" className="sr-only" />
                                         <Lock className="mb-3 h-6 w-6" />
                                         Private
                                         <p className="text-sm font-normal text-muted-foreground mt-2 text-center">Only people with an invite code can join.</p>
