@@ -6,24 +6,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle, User as UserIcon } from "lucide-react";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-  return (
-    <Link href={`/leagues/${leagueId}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
+  const hasPlayed = player.wins > 0 || player.losses > 0;
+  const content = (
+    <div className="flex items-center gap-3">
       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
         <UserIcon className="w-4 h-4 text-muted-foreground" />
       </div>
       <span className="font-medium">{player.name}</span>
-    </Link>
+    </div>
   );
+
+  if (hasPlayed) {
+    return (
+      <Link href={`/leagues/${leagueId}/players/${player.id}`} className="hover:underline">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 };
 
 const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
+    const hasPlayed = player.wins > 0 || player.losses > 0;
     const content = (
          <div className="flex flex-col items-center gap-2 p-4 border rounded-lg transition-colors hover:bg-accent/10 hover:border-primary/50">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
@@ -33,11 +45,19 @@ const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player
             <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
         </div>
     );
+    
+    if (hasPlayed) {
+        return (
+            <Link key={player.id} href={`/leagues/${leagueId}/players/${player.id}`}>
+                {content}
+            </Link>
+        );
+    }
 
     return (
-        <Link key={player.id} href={`/leagues/${leagueId}/players/${player.id}`}>
+        <div key={player.id} className="opacity-70 cursor-not-allowed">
             {content}
-        </Link>
+        </div>
     );
 };
 
@@ -142,9 +162,6 @@ export default function LeagueTabs({ league }: { league: League }) {
                             </div>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                        <ChevronsRight className="h-5 w-5" />
-                    </Button>
                 </div>
             ))}
           </CardContent>
@@ -167,3 +184,5 @@ export default function LeagueTabs({ league }: { league: League }) {
     </Tabs>
   );
 }
+
+    

@@ -186,13 +186,37 @@ export async function deleteLeague(leagueId: string): Promise<void> {
   return Promise.resolve();
 }
 
-export async function getPlayerStats(leagueId: string, playerId: string): Promise<Player | undefined> {
+export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
   const league = await getLeagueById(leagueId);
-  if (!league || !league.players) {
+  if (!league) {
     return undefined;
   }
+  
   const player = league.players.find(p => p.id === playerId);
-  return player;
+  if (!player || player.status === 'inactive') {
+    return undefined;
+  }
+  
+  const hasPlayed = player.wins > 0 || player.losses > 0;
+  if (!hasPlayed) {
+    return undefined;
+  }
+
+  const sortedPlayers = [...league.players]
+    .filter(p => p.status === 'active')
+    .sort((a, b) => b.elo - a.elo);
+  const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
+  
+  const matchHistory = (league.matches || [])
+    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return {
+    player: JSON.parse(JSON.stringify(player)),
+    leagueId,
+    rank,
+    matchHistory,
+  };
 }
 
 
@@ -363,3 +387,4 @@ export async function recordMatch(
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
 
+    

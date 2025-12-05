@@ -83,8 +83,8 @@ export default function RecordMatchPage() {
     defaultValues: {
       playerAId: "",
       playerBId: "",
-      playerAScore: '' as any, // Use empty string for controlled number inputs
-      playerBScore: '' as any, // Use empty string for controlled number inputs
+      playerAScore: '',
+      playerBScore: '',
       winnerId: "",
     }
   });
@@ -279,3 +279,5 @@ export default function RecordMatchPage() {
     </div>
   );
 }
+
+    
