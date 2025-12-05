@@ -75,7 +75,7 @@ const initialLeagues: League[] = [
     id: 'league-2',
     name: 'Weekend Warriors',
     description: 'A casual league for weekend games.',
-    adminIds: ['user-3'],
+    adminIds: ['user-3', 'user-1'],
     players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0})),
     matches: [],
   }
