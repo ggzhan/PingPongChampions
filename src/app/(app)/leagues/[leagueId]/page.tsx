@@ -39,11 +39,15 @@ export default function LeaguePage() {
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
     setLoading(true);
-    const leagueData = await getLeagueById(leagueId);
-    if (leagueData) {
+    try {
+      const leagueData = await getLeagueById(leagueId);
       setLeague(leagueData);
+    } catch (error) {
+      console.error("Failed to fetch league:", error);
+      setLeague(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [leagueId]);
 
   useEffect(() => {
@@ -110,9 +114,9 @@ export default function LeaguePage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between md:items-start">
-            <div>
-               <div className="flex items-center gap-4 mb-2">
+          <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+            <div className="flex-1">
+               <div className="flex items-center gap-4 mb-2 flex-wrap">
                 <CardTitle className="text-3xl font-bold font-headline">{league.name}</CardTitle>
                 <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
                     {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
@@ -126,7 +130,7 @@ export default function LeaguePage() {
               </div>
               <CardDescription className="max-w-2xl">{league.description}</CardDescription>
             </div>
-            <div className="flex items-center gap-2 mt-4 md:mt-0">
+            <div className="flex items-center gap-2 mt-4 md:mt-0 flex-wrap justify-end">
                {!isMember && user && league.privacy === 'public' && (
                 <Button onClick={handleJoinLeague}>
                   <UserPlus className="mr-2 h-4 w-4" /> Join League
