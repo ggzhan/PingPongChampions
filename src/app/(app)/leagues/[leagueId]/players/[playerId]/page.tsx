@@ -1,13 +1,10 @@
 
-
 import { getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowUp, ArrowDown, User as UserIcon, ArrowLeft } from "lucide-react";
 import { format, parseISO } from 'date-fns';
-import EloChart from "./components/elo-chart";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import type { Metadata } from 'next';
 import Link from "next/link";
@@ -40,7 +37,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     notFound();
   }
 
-  const { player, rank, eloHistory, matchHistory, headToHead } = stats;
+  const { player, rank, matchHistory } = stats;
 
   return (
     <div className="space-y-6">
@@ -51,83 +48,38 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             </Link>
         </Button>
       <Card>
-        <CardHeader className="flex flex-col md:flex-row items-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-            <UserIcon className="w-12 h-12 text-muted-foreground"/>
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-                <h1 className="text-3xl font-bold font-headline">{player.name}</h1>
-                {player.status === 'inactive' && <Badge variant="secondary">Inactive</Badge>}
-            </div>
-            <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-6 gap-y-2 mt-2 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{player.elo}</span>
-                <span>ELO</span>
-              </div>
-               {rank > 0 && (
-                <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">#{rank}</span>
-                    <span>Rank</span>
+        <CardHeader>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+                    <UserIcon className="w-12 h-12 text-muted-foreground"/>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground text-green-600">{player.wins}W</span>
-                <span>-</span>
-                <span className="font-semibold text-foreground text-red-600">{player.losses}L</span>
-              </div>
+                <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center gap-4 justify-center md:justify-start">
+                        <h1 className="text-3xl font-bold font-headline">{player.name}</h1>
+                        {player.status === 'inactive' && <Badge variant="secondary">Inactive</Badge>}
+                    </div>
+                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-6 gap-y-2 mt-2 text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground">{player.elo}</span>
+                        <span>ELO</span>
+                    </div>
+                    {rank > 0 && (
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">#{rank}</span>
+                            <span>Rank</span>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground text-green-600">{player.wins}W</span>
+                        <span>-</span>
+                        <span className="font-semibold text-foreground text-red-600">{player.losses}L</span>
+                    </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </CardHeader>
       </Card>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle>ELO History</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <EloChart data={eloHistory} />
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-                <CardTitle>Head-to-Head</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {Object.keys(headToHead).length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                    No head-to-head data yet.
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[250px]">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Opponent</TableHead>
-                                <TableHead className="text-right">Record</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {Object.values(headToHead).map(h2h => (
-                                 <TableRow key={h2h.opponentName}>
-                                    <TableCell className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                            <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                        </div>
-                                        {h2h.opponentName}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">{h2h.wins} - {h2h.losses}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                  </ScrollArea>
-                )}
-            </CardContent>
-        </Card>
-      </div>
-
       <Card>
         <CardHeader>
             <CardTitle>Recent Matches</CardTitle>

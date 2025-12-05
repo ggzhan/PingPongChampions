@@ -51,16 +51,7 @@ export type PlayerStats = {
   player: Player;
   leagueId: string;
   rank: number;
-  eloHistory: EloHistory[];
   matchHistory: Match[];
-  headToHead: {
-    [opponentId: string]: {
-      opponentName: string;
-      wins: number;
-      losses: number;
-      matches: number;
-    };
-  };
 };
 
 export type MatchResult = {

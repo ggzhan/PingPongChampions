@@ -2,7 +2,7 @@
 // In a real application, this would be a database.
 // For this example, we're using an in-memory store.
 // We attach it to the global object to prevent it from being cleared on hot-reloads.
-import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
+import type { League, User, Match, Player, PlayerStats } from './types';
 
 declare global {
   var dataStore: {
@@ -193,71 +193,21 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const player = league.players.find(p => p.id === playerId);
   if (!player) return undefined;
 
-  const allMatchesForPlayer = (league.matches || [])
+  const matchHistory = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // --- ELO History Calculation ---
-  const eloHistory: EloHistory[] = [];
-  let currentElo = player.elo; // Start with the correct, current ELO
-
-  // Add current ELO point for today
-  eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: currentElo });
-
-  // Work backwards through matches to build history
-  for (let i = allMatchesForPlayer.length - 1; i >= 0; i--) {
-    const match = allMatchesForPlayer[i];
-    const isPlayerA = match.playerAId === playerId;
-    const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
-    
-    // Subtract the change to get the ELO before this match
-    currentElo -= eloChange;
-    eloHistory.unshift({ date: new Date(match.createdAt).toISOString().split('T')[0], elo: currentElo });
-  }
-
-  // Add a baseline starting point if necessary
-  if (allMatchesForPlayer.length === 0 || eloHistory[0].elo !== 1000) {
-      const joinDate = player.createdAt ? new Date(player.createdAt) : new Date();
-      const dayBeforeJoin = new Date(joinDate);
-      dayBeforeJoin.setDate(dayBeforeJoin.getDate() - 1);
-      eloHistory.unshift({ date: dayBeforeJoin.toISOString().split('T')[0], elo: 1000 });
-  }
-
-
-  // --- Head-to-Head Calculation ---
-  const headToHead: PlayerStats['headToHead'] = {};
-  allMatchesForPlayer.forEach(match => {
-      const isPlayerA = match.playerAId === playerId;
-      const opponentId = isPlayerA ? match.playerBId : match.playerAId;
-      const opponentName = isPlayerA ? match.playerBName : match.playerAName;
-      const won = match.winnerId === playerId;
-
-      if (!headToHead[opponentId]) {
-        headToHead[opponentId] = { opponentName, wins: 0, losses: 0, matches: 0 };
-      }
-      headToHead[opponentId].matches++;
-      if (won) {
-        headToHead[opponentId].wins++;
-      } else {
-        headToHead[opponentId].losses++;
-      }
-  });
-  
-  // --- Rank Calculation ---
+  // Rank Calculation
   const rankedPlayers = [...league.players]
     .filter(p => p.status === 'active')
     .sort((a, b) => b.elo - a.elo);
   const rank = rankedPlayers.findIndex(p => p.id === playerId) + 1;
 
-  const matchHistory = [...allMatchesForPlayer].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  
   return Promise.resolve({
-    player, // The correct, up-to-date player object
+    player,
     leagueId,
     rank: player.status === 'active' ? rank : -1,
-    eloHistory,
     matchHistory,
-    headToHead,
   });
 }
 
