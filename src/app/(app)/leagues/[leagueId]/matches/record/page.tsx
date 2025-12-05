@@ -78,6 +78,13 @@ export default function RecordMatchPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      playerAId: "",
+      playerBId: "",
+      playerAScore: '' as any, // Use empty string for controlled number inputs
+      playerBScore: '' as any, // Use empty string for controlled number inputs
+      winnerId: "",
+    }
   });
 
   const playerAId = form.watch("playerAId");
