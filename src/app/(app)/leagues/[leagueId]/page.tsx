@@ -11,6 +11,7 @@ import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
 import type { League } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 type LeaguePageProps = {
   params: { leagueId: string };
@@ -22,17 +23,18 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const leagueId = params.leagueId;
 
   useEffect(() => {
     async function fetchLeague() {
-      const leagueData = await getLeagueById(params.leagueId);
+      const leagueData = await getLeagueById(leagueId);
       if (leagueData) {
         setLeague(leagueData);
       }
       setLoading(false);
     }
     fetchLeague();
-  }, [params.leagueId]);
+  }, [leagueId]);
   
   if (loading) {
     return <div>Loading...</div>; // Or a skeleton loader
@@ -78,7 +80,11 @@ export default function LeaguePage({ params }: LeaguePageProps) {
               )}
               <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
               {isAdmin && (
-                <Button variant="secondary"><Settings className="mr-2 h-4 w-4" /> Admin</Button>
+                <Button variant="secondary" asChild>
+                  <Link href={`/leagues/${league.id}/admin`}>
+                    <Settings className="mr-2 h-4 w-4" /> Admin
+                  </Link>
+                </Button>
               )}
             </div>
           </div>

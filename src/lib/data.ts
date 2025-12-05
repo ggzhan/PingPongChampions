@@ -75,7 +75,7 @@ const initialLeagues: League[] = [
     id: 'league-2',
     name: 'Weekend Warriors',
     description: 'A casual league for weekend games.',
-    adminIds: ['user-3', 'user-1'],
+    adminIds: ['user-1', 'user-3'],
     players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0})),
     matches: [],
   }
@@ -134,6 +134,15 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
   return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
 }
 
+export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description'>>): Promise<League> {
+  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === id);
+  if (leagueIndex === -1) {
+    throw new Error("League not found");
+  }
+  g.dataStore.leagues[leagueIndex] = { ...g.dataStore.leagues[leagueIndex], ...updates };
+  return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues[leagueIndex])));
+}
+
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
   const league = await getLeagueById(leagueId);
   if (!league || !league.players) return undefined;
@@ -149,40 +158,33 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     
   const eloHistory: {date: string, elo: number}[] = [];
   
-  const playerMatches = (league.matches || [])
-    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  
-  let runningElo = 1000; // Starting ELO
-  
   // To reconstruct history, we should start from the beginning.
   const allMatchesChronological = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  // Let's find the ELO before the first recorded match for this player in this league
-  const initialElo = player.elo - allMatchesChronological.reduce((acc, match) => {
+  // Find the ELO before the first recorded match for this player in this league
+  const eloChangesSum = allMatchesChronological.reduce((acc, match) => {
     return acc + (match.playerAId === playerId ? match.eloChangeA : match.eloChangeB);
   }, 0);
   
-  runningElo = initialElo;
-  eloHistory.push({ date: new Date(0).toISOString().split('T')[0], elo: runningElo });
-
-
-  allMatchesChronological.forEach(match => {
-      const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-      runningElo += eloChange;
-      eloHistory.push({
-        date: new Date(match.createdAt).toISOString().split('T')[0],
-        elo: runningElo
+  const initialElo = player.elo - eloChangesSum;
+  let runningElo = initialElo;
+  
+  if (allMatchesChronological.length === 0) {
+      eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+  } else {
+      eloHistory.push({ date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], elo: initialElo });
+      allMatchesChronological.forEach(match => {
+          const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+          runningElo += eloChange;
+          eloHistory.push({
+            date: new Date(match.createdAt).toISOString().split('T')[0],
+            elo: runningElo
+          });
       });
-  });
-
-  // If there's still no history, just show current elo
-  if (eloHistory.length <= 1) {
-    eloHistory.splice(0, eloHistory.length); // Clear array
-    eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
+
 
   const headToHead: PlayerStats['headToHead'] = {};
   matchHistory.forEach(match => {
