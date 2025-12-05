@@ -62,7 +62,11 @@ export default function LeagueTabs({ league }: { league: League }) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Match History</CardTitle>
-            <Button><PlusCircle className="mr-2 h-4 w-4"/>Record Match</Button>
+            <Button asChild>
+                <Link href={`/leagues/${league.id}/matches/record`}>
+                    <PlusCircle className="mr-2 h-4 w-4"/>Record Match
+                </Link>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
              {sortedMatches.map((match) => (

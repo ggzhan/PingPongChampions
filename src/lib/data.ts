@@ -79,7 +79,7 @@ if (!g.dataStore) {
       id: 'league-2',
       name: 'Weekend Warriors',
       description: 'A casual league for weekend games.',
-      adminIds: ['user-3'],
+      adminIds: ['user-1', 'user-3'],
       players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
       matches: [],
     }
@@ -161,14 +161,12 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
   const eloHistory: EloHistory[] = [];
-  
   const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  
-  let currentElo = player.elo;
-  let runningElo = currentElo;
+  let runningElo = player.elo;
 
+  // Trace ELO history backwards from the present
   for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
-      eloHistory.push({
+      eloHistory.unshift({
           date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
           elo: runningElo
       });
@@ -177,13 +175,15 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
       runningElo -= eloChange;
   }
   
-  eloHistory.push({
-    date: allMatchesChronological.length > 0
-        ? new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0]
-        : new Date(Date.now() - 86400000).toISOString().split('T')[0],
-    elo: runningElo
+  // Add the starting ELO point
+  eloHistory.unshift({
+      date: allMatchesChronological.length > 0
+          ? new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0] // One day before first match
+          : new Date(Date.now() - 86400000).toISOString().split('T')[0], // Default to yesterday if no matches
+      elo: runningElo
   });
-
+  
+  // If there are no matches, ELO history should just be the current ELO.
   if (matchHistory.length === 0) {
       eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
@@ -210,7 +210,7 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     player,
     leagueId,
     rank: player.status === 'active' ? rank : -1,
-    eloHistory: eloHistory.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    eloHistory: eloHistory,
     matchHistory,
     headToHead
   });
@@ -307,4 +307,64 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   });
 
   return Promise.resolve();
+}
+
+function calculateEloChange(playerElo: number, opponentElo: number, result: 'win' | 'loss'): number {
+  const K = 32; // K-factor determines how much the ELO rating is updated
+  const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+  const actualScore = result === 'win' ? 1 : 0;
+  return Math.round(K * (actualScore - expectedScore));
+}
+
+export async function recordMatch(
+  leagueId: string,
+  formData: {
+    playerAId: string;
+    playerBId: string;
+    playerAScore: number;
+    playerBScore: number;
+    winnerId: string;
+  }
+): Promise<Match> {
+  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
+  if (leagueIndex === -1) {
+    throw new Error('League not found');
+  }
+
+  const league = g.dataStore.leagues[leagueIndex];
+  const playerA = league.players.find(p => p.id === formData.playerAId);
+  const playerB = league.players.find(p => p.id === formData.playerBId);
+
+  if (!playerA || !playerB) {
+    throw new Error('One or both players not found in the league');
+  }
+
+  const eloChangeA = calculateEloChange(playerA.elo, playerB.elo, formData.winnerId === playerA.id ? 'win' : 'loss');
+  const eloChangeB = calculateEloChange(playerB.elo, playerA.elo, formData.winnerId === playerB.id ? 'win' : 'loss');
+
+  // Update player stats
+  playerA.elo += eloChangeA;
+  playerA.wins += formData.winnerId === playerA.id ? 1 : 0;
+  playerA.losses += formData.winnerId === playerA.id ? 0 : 1;
+
+  playerB.elo += eloChangeB;
+  playerB.wins += formData.winnerId === playerB.id ? 1 : 0;
+  playerB.losses += formData.winnerId === playerB.id ? 0 : 1;
+
+  const newMatch: Match = {
+    id: `match-${Date.now()}`,
+    leagueId,
+    ...formData,
+    playerAName: playerA.name,
+    playerBName: playerB.name,
+    eloChangeA,
+    eloChangeB,
+    createdAt: new Date().toISOString(),
+  };
+
+  league.matches.push(newMatch);
+
+  g.dataStore.leagues[leagueIndex] = league;
+
+  return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }

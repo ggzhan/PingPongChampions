@@ -58,3 +58,11 @@ export type PlayerStats = {
     };
   };
 };
+
+export type MatchResult = {
+    playerAId: string;
+    playerBId: string;
+    playerAScore: number;
+    playerBScore: number;
+    winnerId: string;
+};
