@@ -2,7 +2,7 @@
 "use client"
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import type { EloHistory } from '@/lib/types';
 import { useTheme } from 'next-themes';
 
@@ -31,53 +31,62 @@ export default function EloChart({ data }: EloChartProps) {
   const yMax = Math.max(...eloValues);
   const yPadding = (yMax - yMin) * 0.1 || 10;
   const yDomain = [Math.floor(yMin - yPadding), Math.ceil(yMax + yPadding)];
+  
+  const chartConfig = {
+      elo: {
+        label: "ELO",
+        color: "hsl(var(--primary))",
+      },
+    };
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-        <defs>
-          <linearGradient id="colorElo" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-          </linearGradient>
-        </defs>
-        <XAxis
-          dataKey="matchIndex"
-          stroke={strokeColor}
-          tickFormatter={(value) => `M${value}`}
-          tickLine={false}
-          axisLine={false}
-          dy={10}
-        />
-        <YAxis 
-          stroke={strokeColor}
-          domain={yDomain}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `${value}`}
-          dx={-5}
-        />
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-        <Tooltip
-          cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
-          content={<ChartTooltipContent
-            formatter={(value, name) => (
-                <div className="flex flex-col">
-                    <span className="font-semibold">{`ELO: ${value}`}</span>
-                </div>
-            )}
-            labelFormatter={(label, payload) => {
-                if (payload && payload.length > 0) {
-                    const matchIndex = payload[0].payload.matchIndex;
-                    return `Match #${matchIndex}`;
-                }
-                return label;
-            }}
-            indicator="dot"
-            />}
-        />
-        <Area type="monotone" dataKey="elo" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorElo)" />
-      </AreaChart>
-    </ResponsiveContainer>
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+            <defs>
+              <linearGradient id="colorElo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="matchIndex"
+              stroke={strokeColor}
+              tickFormatter={(value) => `M${value}`}
+              tickLine={false}
+              axisLine={false}
+              dy={10}
+            />
+            <YAxis 
+              stroke={strokeColor}
+              domain={yDomain}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `${value}`}
+              dx={-5}
+            />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+            <Tooltip
+              cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1 }}
+              content={<ChartTooltipContent
+                formatter={(value, name) => (
+                    <div className="flex flex-col">
+                        <span className="font-semibold">{`ELO: ${value}`}</span>
+                    </div>
+                )}
+                labelFormatter={(label, payload) => {
+                    if (payload && payload.length > 0) {
+                        const matchIndex = payload[0].payload.matchIndex;
+                        return `Match #${matchIndex}`;
+                    }
+                    return label;
+                }}
+                indicator="dot"
+                />}
+            />
+            <Area type="monotone" dataKey="elo" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorElo)" />
+          </AreaChart>
+        </ResponsiveContainer>
+    </ChartContainer>
   );
 }
