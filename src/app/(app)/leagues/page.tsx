@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { PlusCircle, Users, Swords } from "lucide-react";
 import { getLeagues } from "@/lib/data";
 
+export const dynamic = 'force-dynamic';
+
 export default async function LeaguesPage() {
   const leagues = await getLeagues();
 
@@ -34,7 +36,7 @@ export default async function LeaguesPage() {
             <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle className="font-headline">{league.name}</CardTitle>
-                <CardDescription>{league.description}</CardDescription>
+                <CardDescription>{league.description || 'No description available.'}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                 <div className="flex items-center text-sm text-muted-foreground space-x-4">

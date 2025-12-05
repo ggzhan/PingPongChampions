@@ -67,6 +67,7 @@ export default function CreateLeaguePage() {
         description: `"${values.name}" is ready for players.`,
       });
       router.push(`/leagues/${newLeague.id}`);
+      router.refresh();
     } catch (error) {
        toast({
         variant: "destructive",
