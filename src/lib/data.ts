@@ -79,7 +79,7 @@ if (!g.dataStore) {
       id: 'league-2',
       name: 'Weekend Warriors',
       description: 'A casual league for weekend games.',
-      adminIds: ['user-1', 'user-3'],
+      adminIds: ['user-3'],
       players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
       matches: [],
     }
@@ -96,10 +96,13 @@ if (!g.dataStore) {
 export async function getLeagues(): Promise<League[]> {
   const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
   // Augment leagues with active player count
-  return Promise.resolve(leagues.map((league: League) => ({
-    ...league,
-    activePlayerCount: league.players.filter(p => p.status === 'active').length,
-  })));
+  return Promise.resolve(leagues.map((league: League) => {
+    const activePlayerCount = league.players ? league.players.filter(p => p.status === 'active').length : 0;
+    return {
+      ...league,
+      activePlayerCount: activePlayerCount,
+    };
+  }));
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
