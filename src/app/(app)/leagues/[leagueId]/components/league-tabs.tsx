@@ -55,7 +55,6 @@ export default function LeagueTabs({ league }: { league: League }) {
   );
 
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const canRecordMatch = activePlayers.length >= 2;
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
@@ -97,28 +96,15 @@ export default function LeagueTabs({ league }: { league: League }) {
       </TabsContent>
       <TabsContent value="matches">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Match History</CardTitle>
-             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="inline-block"> 
-                    <Button asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
-                      <Link href={`/leagues/${league.id}/matches/record`}>
-                          <PlusCircle className="mr-2 h-4 w-4"/>Record Match
-                      </Link>
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                {!canRecordMatch && (
-                  <TooltipContent>
-                    <p>At least 2 active players are needed to record a match.</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
           </CardHeader>
           <CardContent className="space-y-4">
+             {sortedMatches.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                    No matches recorded yet.
+                </div>
+            )}
              {sortedMatches.map((match) => (
                 <div key={match.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
                     <div className="flex items-center gap-4">

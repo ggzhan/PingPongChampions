@@ -5,7 +5,7 @@ import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/da
 import { notFound, useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff } from "lucide-react";
+import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff, PlusCircle } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect, useCallback } from "react";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import JoinPrivateLeagueForm from "./components/join-private-league-form";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function LeaguePage() {
   const params = useParams();
@@ -59,6 +60,9 @@ export default function LeaguePage() {
 
   const isAdmin = user && league.adminIds.includes(user.id);
   const isMember = user && league.players.some(p => p.id === user.id && p.status === 'active');
+  const activePlayers = league.players.filter(p => p.status === 'active');
+  const canRecordMatch = activePlayers.length >= 2;
+
 
   const handleJoinLeague = async () => {
     if (user && !isMember && league.privacy === 'public') {
@@ -129,28 +133,49 @@ export default function LeaguePage() {
                 </Button>
               )}
                {isMember && user && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      <LogOut className="mr-2 h-4 w-4" /> Leave League
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        You will be removed from the leaderboard, but your match history will be kept. 
-                        You can rejoin the league at any time if it's public.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleLeaveLeague}>
-                        Leave League
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                 <>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-block"> 
+                          <Button asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
+                            <Link href={`/leagues/${league.id}/matches/record`}>
+                                <PlusCircle className="mr-2 h-4 w-4"/>Record Match
+                            </Link>
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!canRecordMatch && (
+                        <TooltipContent>
+                          <p>At least 2 active players are needed to record a match.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">
+                        <LogOut className="mr-2 h-4 w-4" /> Leave League
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          You will be removed from the leaderboard, but your match history will be kept. 
+                          You can rejoin the league at any time if it's public.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLeaveLeague}>
+                          Leave League
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                 </>
               )}
               <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
               {isAdmin && (
@@ -182,5 +207,3 @@ export default function LeaguePage() {
     </div>
   );
 }
-
-    
