@@ -1,12 +1,14 @@
 
 "use client";
 
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,42 +36,24 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
   return content;
 };
 
-const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-    const hasPlayed = player.wins > 0 || player.losses > 0;
-    const content = (
-         <div className="flex flex-col items-center gap-2 p-4 border rounded-lg transition-colors hover:bg-accent/10 hover:border-primary/50">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                <UserIcon className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <span className="font-semibold text-center">{player.name}</span>
-            <span className="text-sm text-muted-foreground font-mono">{player.elo} ELO</span>
-            <span className="text-xs text-muted-foreground">
-                <span className="font-semibold text-green-600">{player.wins}W</span>
-                <span className="mx-1">/</span>
-                <span className="font-semibold text-red-600">{player.losses}L</span>
-            </span>
-        </div>
-    );
-    
-    if (hasPlayed) {
-        return (
-            <Link key={player.id} href={`/leagues/${leagueId}/players/${player.id}`}>
-                {content}
-            </Link>
-        );
-    }
-
-    return (
-        <div key={player.id} className="opacity-70 cursor-not-allowed">
-            {content}
-        </div>
-    );
-};
-
 
 export default function LeagueTabs({ league }: { league: League }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const activePlayers = league.players.filter(p => p.status === 'active');
-  const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
+
+  const playersWithMatchCount = activePlayers.map(player => ({
+      ...player,
+      matchesPlayed: (league.matches || []).filter(m => m.playerAId === player.id || m.playerBId === player.id).length
+  }));
+
+  const sortedPlayersByRank = [...activePlayers].sort((a, b) => b.elo - a.elo);
+  const sortedPlayersByMatches = [...playersWithMatchCount].sort((a,b) => b.matchesPlayed - a.matchesPlayed);
+
+  const filteredPlayers = sortedPlayersByMatches.filter(player => 
+    player.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const canRecordMatch = activePlayers.length >= 2;
 
@@ -96,7 +80,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedPlayers.map((player, index) => (
+                {sortedPlayersByRank.map((player, index) => (
                   <TableRow key={player.id}>
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
@@ -176,13 +160,57 @@ export default function LeagueTabs({ league }: { league: League }) {
         <Card>
           <CardHeader>
             <CardTitle>Players</CardTitle>
+            <CardDescription>
+                A list of all active players in this league, sorted by matches played.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {activePlayers.map(player => (
-                    <PlayerCardLink key={player.id} leagueId={league.id} player={player} />
-                ))}
+            <div className="mb-4">
+                 <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search players..."
+                        className="pl-8 w-full md:w-1/2 lg:w-1/3"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
+             <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Player</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Matches Played</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPlayers.map((player) => (
+                  <TableRow key={player.id}>
+                    <TableCell>
+                      <PlayerLink leagueId={league.id} player={player} />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                        {player.showEmail ? (
+                             <a href={`mailto:${player.email}`} className="flex items-center gap-2 hover:underline">
+                                <Mail className="h-4 w-4"/>
+                                {player.email}
+                             </a>
+                        ) : (
+                            <span className="italic">Not shared</span>
+                        )}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{player.matchesPlayed}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {filteredPlayers.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                    No players found matching your search.
+                </div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
