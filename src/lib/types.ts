@@ -11,6 +11,7 @@ export type Player = User & {
   wins: number;
   losses: number;
   status: 'active' | 'inactive';
+  createdAt?: string; // ISO date string
 };
 
 export type Match = {

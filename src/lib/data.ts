@@ -200,27 +200,34 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
   let eloHistory: EloHistory[] = [];
+  const allMatchesForPlayerChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  if (matchHistory.length > 0) {
-      let runningElo = player.elo;
+  if (allMatchesForPlayerChronological.length > 0) {
       // Trace ELO history backwards from the present
+      let runningElo = player.elo;
       eloHistory.unshift({
           date: new Date().toISOString().split('T')[0],
           elo: runningElo
       });
-
-      // Create a reversed copy for chronological processing
-      const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-      for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
-          const match = allMatchesChronological[i];
+      
+      // Iterate backwards through chronologically sorted matches
+      for (let i = allMatchesForPlayerChronological.length - 1; i >= 0; i--) {
+          const match = allMatchesForPlayerChronological[i];
           const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
           runningElo -= eloChange;
           eloHistory.unshift({
-              date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
+              date: new Date(match.createdAt).toISOString().split('T')[0],
               elo: runningElo
           });
       }
+       // Ensure there's a starting point if the first match isn't the creation date
+      if (eloHistory.length > 0 && new Date(eloHistory[0].date) > new Date(player.createdAt || 0)) {
+           eloHistory.unshift({
+              date: new Date(player.createdAt || Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              elo: 1000
+           });
+      }
+
   } else {
      // If no matches, create a simple two-point history to draw a flat line.
      const today = new Date();
@@ -277,6 +284,7 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
         losses: 0,
         status: 'active',
         showEmail: !!user.showEmail,
+        createdAt: new Date().toISOString(),
       };
       if (!league.players) league.players = [];
       league.players.push(newPlayer);
