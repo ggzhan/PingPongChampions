@@ -132,23 +132,11 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     status: 'active'
   };
 
-  // Add a dummy player to ensure there's more than one player for stats calculations.
-  const ghostPlayer: Player = {
-      id: 'ghost-player',
-      name: 'Training Bot',
-      email: '',
-      showEmail: false,
-      elo: 1000,
-      wins: 0,
-      losses: 0,
-      status: 'inactive'
-  }
-
   const newLeague: League = {
     id: `league-${Date.now()}`,
     ...leagueData,
     inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : undefined,
-    players: [newPlayer, ghostPlayer],
+    players: [newPlayer],
     matches: [],
   };
   g.dataStore.leagues.push(newLeague);
@@ -211,38 +199,36 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-  const eloHistory: EloHistory[] = [];
+  const eloHistory: EloHistory[] = [{ date: new Date().toISOString().split('T')[0], elo: player.elo }];
   
   if (matchHistory.length > 0) {
-    const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    let runningElo = player.elo;
+      eloHistory.pop(); // Remove the initial point, we'll build from matches
+      const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      let runningElo = player.elo;
 
-    // Trace ELO history backwards from the present
-    eloHistory.unshift({
-        date: new Date().toISOString().split('T')[0],
-        elo: runningElo
-    });
-    for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
-        const match = allMatchesChronological[i];
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        runningElo -= eloChange;
-        eloHistory.unshift({
-            date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
-            elo: runningElo
-        });
-    }
+      // Trace ELO history backwards from the present
+      eloHistory.unshift({
+          date: new Date().toISOString().split('T')[0],
+          elo: runningElo
+      });
+
+      for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
+          const match = allMatchesChronological[i];
+          const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+          runningElo -= eloChange;
+          eloHistory.unshift({
+              date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
+              elo: runningElo
+          });
+      }
   }
 
-  // Ensure there's at least one point for the chart if no matches were played
-  if (eloHistory.length === 0) {
-    eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
-  }
-
-  // If there is only one point, add a dummy point for the previous day to draw a line
+  // If there is only one ELO point (e.g., from initial creation), add a dummy point for the previous day to allow the chart to draw a flat line.
   if (eloHistory.length === 1) {
+    const firstPoint = eloHistory[0];
     eloHistory.unshift({
-      date: new Date(new Date(eloHistory[0].date).getTime() - 86400000).toISOString().split('T')[0],
-      elo: eloHistory[0].elo
+      date: new Date(new Date(firstPoint.date).getTime() - 86400000).toISOString().split('T')[0],
+      elo: firstPoint.elo
     });
   }
 
@@ -437,3 +423,5 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
+
+    
