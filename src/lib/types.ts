@@ -10,6 +10,7 @@ export type Player = User & {
   elo: number;
   wins: number;
   losses: number;
+  status: 'active' | 'inactive';
 };
 
 export type Match = {

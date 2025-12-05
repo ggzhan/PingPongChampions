@@ -24,6 +24,7 @@ const initialPlayers: Player[] = initialUsers.slice(0, 4).map(user => ({
   elo: 1000,
   wins: 0,
   losses: 0,
+  status: 'active'
 }));
 
 const initialMatches: Match[] = [
@@ -64,10 +65,10 @@ const initialLeagues: League[] = [
     description: 'The official ping pong league for the office. Settle your disputes over the table.',
     adminIds: ['user-1'],
     players: [
-      { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0 },
-      { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false },
-      { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false },
-      { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false },
+      { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0, status: 'active' },
+      { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
+      { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active' },
+      { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false, status: 'active' },
     ],
     matches: initialMatches,
   },
@@ -76,7 +77,7 @@ const initialLeagues: League[] = [
     name: 'Weekend Warriors',
     description: 'A casual league for weekend games.',
     adminIds: ['user-1', 'user-3'],
-    players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0})),
+    players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
     matches: [],
   }
 ];
@@ -122,6 +123,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
     elo: 1000,
     wins: 0,
     losses: 0,
+    status: 'active'
   }
 
   const newLeague: League = {
@@ -150,7 +152,8 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const player = league.players.find(p => p.id === playerId);
   if (!player) return undefined;
 
-  const sortedPlayers = [...league.players].sort((a, b) => b.elo - a.elo);
+  const activePlayers = league.players.filter(p => p.status === 'active');
+  const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
   const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
 
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
@@ -159,31 +162,29 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const eloHistory: EloHistory[] = [];
   
   const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  
+  let currentElo = player.elo;
+  let runningElo = currentElo;
 
-  if (allMatchesChronological.length > 0) {
-    const eloChangesSum = allMatchesChronological.reduce((acc, match) => {
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        return acc + eloChange;
-    }, 0);
-    let initialElo = player.elo - eloChangesSum;
-    let runningElo = initialElo;
-
-    eloHistory.push({ 
-        date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], 
-        elo: initialElo 
-    });
-
-    allMatchesChronological.forEach(match => {
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        runningElo += eloChange;
-        eloHistory.push({
-          date: new Date(match.createdAt).toISOString().split('T')[0],
+  for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
+      eloHistory.push({
+          date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
           elo: runningElo
-        });
-    });
-  } else {
-    eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
-    eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
+      });
+      const match = allMatchesChronological[i];
+      const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+      runningElo -= eloChange;
+  }
+  
+  eloHistory.push({
+    date: allMatchesChronological.length > 0
+        ? new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0]
+        : new Date(Date.now() - 86400000).toISOString().split('T')[0],
+    elo: runningElo
+  });
+
+  if (matchHistory.length === 0) {
+      eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
 
   const headToHead: PlayerStats['headToHead'] = {};
@@ -207,7 +208,7 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   return Promise.resolve({
     player,
     leagueId,
-    rank,
+    rank: player.status === 'active' ? rank : -1,
     eloHistory: eloHistory.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     matchHistory,
     headToHead
@@ -218,16 +219,33 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
   const league = g.dataStore.leagues.find(l => l.id === leagueId);
   const user = g.dataStore.users.find(u => u.id === userId);
 
-  if (league && user && !league.players.some(p => p.id === userId)) {
-    const newPlayer: Player = {
-      ...user,
-      elo: 1000,
-      wins: 0,
-      losses: 0,
-      showEmail: !!user.showEmail,
-    };
-    if (!league.players) league.players = [];
-    league.players.push(newPlayer);
+  if (league && user) {
+    const existingPlayer = league.players.find(p => p.id === userId);
+    if (existingPlayer) {
+      existingPlayer.status = 'active';
+    } else {
+       const newPlayer: Player = {
+        ...user,
+        elo: 1000,
+        wins: 0,
+        losses: 0,
+        status: 'active',
+        showEmail: !!user.showEmail,
+      };
+      if (!league.players) league.players = [];
+      league.players.push(newPlayer);
+    }
+  }
+  return Promise.resolve();
+}
+
+export async function removePlayerFromLeague(leagueId: string, userId: string): Promise<void> {
+  const league = g.dataStore.leagues.find(l => l.id === leagueId);
+  if (league) {
+    const player = league.players.find(p => p.id === userId);
+    if (player) {
+      player.status = 'inactive';
+    }
   }
   return Promise.resolve();
 }
@@ -257,4 +275,35 @@ export async function updateUserInLeagues(user: User): Promise<void> {
     });
 
     return Promise.resolve();
+}
+
+export async function deleteUserAccount(userId: string): Promise<void> {
+  // Anonymize user in the main user list
+  const user = g.dataStore.users.find(u => u.id === userId);
+  if (user) {
+    user.name = "Deleted User";
+    user.email = "";
+    user.showEmail = false;
+  }
+
+  // Anonymize user and set to inactive across all leagues
+  g.dataStore.leagues.forEach(league => {
+    const player = league.players.find(p => p.id === userId);
+    if (player) {
+      player.name = "Deleted User";
+      player.email = "";
+      player.showEmail = false;
+      player.status = 'inactive';
+    }
+    league.matches.forEach(match => {
+      if (match.playerAId === userId) {
+        match.playerAName = "Deleted User";
+      }
+      if (match.playerBId === userId) {
+        match.playerBName = "Deleted User";
+      }
+    });
+  });
+
+  return Promise.resolve();
 }

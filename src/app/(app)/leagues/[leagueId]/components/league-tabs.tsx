@@ -11,7 +11,8 @@ import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 
 export default function LeagueTabs({ league }: { league: League }) {
-  const sortedPlayers = [...(league.players || [])].sort((a, b) => b.elo - a.elo);
+  const activePlayers = league.players.filter(p => p.status === 'active');
+  const sortedPlayers = [...activePlayers].sort((a, b) => b.elo - a.elo);
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
@@ -111,7 +112,7 @@ export default function LeagueTabs({ league }: { league: League }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {(league.players || []).map(player => (
+                {activePlayers.map(player => (
                     <Link key={player.id} href={`/leagues/${league.id}/players/${player.id}`}>
                         <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-accent/10 hover:border-primary/50 transition-colors">
                             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">

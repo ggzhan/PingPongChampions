@@ -16,6 +16,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   updateUser: (newDetails: Partial<User>) => void;
+  logout: () => void;
 }
 
 // Create the context with a default value
@@ -45,8 +46,15 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     });
   };
 
+  const logout = () => {
+      setUser(null);
+      if (typeof window !== "undefined") {
+          localStorage.removeItem("isLoggedIn");
+      }
+  }
+
   return (
-    <UserContext.Provider value={{ user, updateUser }}>
+    <UserContext.Provider value={{ user, updateUser, logout }}>
       {children}
     </UserContext.Provider>
   );

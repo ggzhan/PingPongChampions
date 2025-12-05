@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, AlertTriangle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,11 +21,23 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { useUser } from "@/context/user-context";
 import { useEffect, useState } from "react";
-import { getLeagues } from "@/lib/data";
+import { getLeagues, deleteUserAccount } from "@/lib/data";
 import type { League } from "@/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 
 const accountFormSchema = z.object({
@@ -53,8 +65,9 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 
 export default function ProfilePage() {
+    const router = useRouter();
     const { toast } = useToast();
-    const { user, updateUser } = useUser();
+    const { user, updateUser, logout } = useUser();
     const [userLeagues, setUserLeagues] = useState<any[]>([]);
 
     useEffect(() => {
@@ -65,14 +78,15 @@ export default function ProfilePage() {
             .filter(league => league.players.some(p => p.id === user.id))
             .map(league => {
               const player = league.players.find(p => p.id === user.id);
-              const rank = [...league.players].sort((a,b) => b.elo - a.elo).findIndex(p => p.id === user.id) + 1;
+              const rank = [...league.players].filter(p => p.status === 'active').sort((a,b) => b.elo - a.elo).findIndex(p => p.id === user.id) + 1;
               return {
                 id: league.id,
                 name: league.name,
-                rank: rank,
+                rank: rank > 0 ? rank : 'N/A',
                 elo: player?.elo,
+                status: player?.status,
               }
-            });
+            }).filter(l => l.status === 'active');
             setUserLeagues(memberLeagues);
         }
       }
@@ -125,6 +139,18 @@ export default function ProfilePage() {
         });
         passwordForm.reset();
     }
+    
+    async function handleAccountDelete() {
+        if (user) {
+            await deleteUserAccount(user.id);
+            logout();
+            toast({
+                title: "Account Deleted",
+                description: "Your account has been successfully deleted.",
+            });
+            router.push('/');
+        }
+    }
 
 
   return (
@@ -157,7 +183,7 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Account Settings</CardTitle>
@@ -282,6 +308,34 @@ export default function ProfilePage() {
                             </form>
                         </Form>
                     </div>
+                </CardContent>
+            </Card>
+            <Card className="border-destructive">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Danger Zone</CardTitle>
+                    <CardDescription>These actions are permanent and cannot be undone.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Delete Account</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your
+                                account and remove your data from our servers. Your name will be anonymized in past matches.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleAccountDelete}>
+                                    Delete My Account
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardContent>
             </Card>
         </div>
