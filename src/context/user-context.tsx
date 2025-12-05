@@ -1,7 +1,8 @@
 
 "use client";
 
-import { createContext, useContext, useState, ReactNode, FC } from 'react';
+import { createContext, useContext, useState, ReactNode, FC, useEffect } from 'react';
+import { updateUserInLeagues } from '@/lib/data';
 
 // Define the shape of the user object
 interface User {
@@ -35,7 +36,10 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const updateUser = (newDetails: Partial<User>) => {
     setUser(currentUser => {
       if (currentUser) {
-        return { ...currentUser, ...newDetails };
+        const updatedUser = { ...currentUser, ...newDetails };
+        // Also update this user's details across all leagues
+        updateUserInLeagues(updatedUser as User);
+        return updatedUser;
       }
       return null;
     });

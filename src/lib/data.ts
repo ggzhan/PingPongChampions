@@ -4,7 +4,7 @@
 import type { League, User, Match, Player, PlayerStats } from './types';
 
 let users: User[] = [
-  { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com' },
+  { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
   { id: 'user-2', name: 'Bob', email: 'bob@example.com' },
   { id: 'user-3', name: 'Charlie', email: 'charlie@example.com' },
   { id: 'user-4', name: 'Diana', email: 'diana@example.com' },
@@ -56,7 +56,7 @@ let leagues: League[] = [
     description: 'The official ping pong league for the office. Settle your disputes over the table.',
     adminIds: ['user-1'],
     players: [
-      { ...initialPlayers[0], elo: 1016, wins: 1, losses: 0 },
+      { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0 },
       { ...initialPlayers[1], elo: 984, wins: 0, losses: 1 },
       { ...initialPlayers[2], elo: 984, wins: 0, losses: 1 },
       { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0 },
@@ -84,9 +84,35 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
   return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
 }
 
+export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches'>): Promise<League> {
+  const user = users.find(u => u.id === leagueData.adminIds[0]);
+  if (!user) {
+    throw new Error("Admin user not found");
+  }
+  
+  const newPlayer: Player = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    showEmail: user.showEmail,
+    elo: 1000,
+    wins: 0,
+    losses: 0,
+  }
+
+  const newLeague: League = {
+    id: `league-${Date.now()}`,
+    ...leagueData,
+    players: [newPlayer],
+    matches: [],
+  };
+  leagues.push(newLeague);
+  return Promise.resolve(newLeague);
+}
+
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
   const league = await getLeagueById(leagueId);
-  if (!league) return undefined;
+  if (!league || !league.players) return undefined;
 
   const player = league.players.find(p => p.id === playerId);
   if (!player) return undefined;
@@ -94,13 +120,13 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const sortedPlayers = [...league.players].sort((a, b) => b.elo - a.elo);
   const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
 
-  const matchHistory = league.matches.filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
   const eloHistory = [{ date: '2023-01-01', elo: 1000 }];
   let currentElo = 1000;
   
-  league.matches
+  (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(a.createdAt).getTime())
     .forEach(match => {
@@ -152,24 +178,25 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
       wins: 0,
       losses: 0,
     };
+    if (!league.players) league.players = [];
     league.players.push(newPlayer);
   }
   return Promise.resolve();
 }
 
 export async function updateUserInLeagues(user: User): Promise<void> {
-    users = users.map(u => u.id === user.id ? user : u);
+    users = users.map(u => u.id === user.id ? {...u, ...user} : u);
     
     leagues = leagues.map(league => {
         return {
             ...league,
             players: league.players.map(player => {
                 if (player.id === user.id) {
-                    return { ...player, name: user.name, email: user.email };
+                    return { ...player, name: user.name, email: user.email, showEmail: user.showEmail };
                 }
                 return player;
             }),
-            matches: league.matches.map(match => {
+            matches: (league.matches || []).map(match => {
                 if (match.playerAId === user.id) {
                     match.playerAName = user.name;
                 }
