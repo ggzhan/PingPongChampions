@@ -140,6 +140,14 @@ export async function updateLeague(id: string, updates: Partial<Pick<League, 'na
   return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues[leagueIndex])));
 }
 
+export async function deleteLeague(leagueId: string): Promise<void> {
+  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
+  if (leagueIndex > -1) {
+    g.dataStore.leagues.splice(leagueIndex, 1);
+  }
+  return Promise.resolve();
+}
+
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
   const league = await getLeagueById(leagueId);
   if (!league || !league.players) return undefined;

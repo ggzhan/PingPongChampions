@@ -17,14 +17,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getLeagueById, updateLeague } from "@/lib/data";
+import { getLeagueById, updateLeague, deleteLeague } from "@/lib/data";
 import { notFound, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
 import type { League } from "@/lib/types";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -100,12 +111,32 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
     }
   }
 
+  async function handleDeleteLeague() {
+    if (!league) return;
+    try {
+      await deleteLeague(league.id);
+      toast({
+        title: "League Deleted",
+        description: `The league "${league.name}" has been permanently deleted.`,
+      });
+      router.push('/leagues');
+      router.refresh();
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Oh no!",
+            description: "Something went wrong while deleting the league.",
+        });
+    }
+  }
+
+
   if (loading || !league) {
     return <div>Loading admin panel...</div>
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="outline" asChild className="mb-4">
             <Link href={`/leagues/${league.id}`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -155,6 +186,35 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
                         <Button type="submit">Save Changes</Button>
                     </form>
                 </Form>
+            </CardContent>
+        </Card>
+
+        <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Danger Zone</CardTitle>
+                <CardDescription>This action is permanent and cannot be undone.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">Delete League</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the
+                            &quot;{league.name}&quot; league and all of its associated data.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteLeague}>
+                                Delete League
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </CardContent>
         </Card>
     </div>
