@@ -96,15 +96,7 @@ if (!g.dataStore) {
 export async function getLeagues(): Promise<League[]> {
   // Create a deep copy to avoid mutations affecting the original data store
   const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
-  
-  // Augment leagues with active player count
-  return Promise.resolve(leagues.map((league: League) => {
-    const activePlayerCount = league.players ? league.players.filter(p => p.status === 'active').length : 0;
-    return {
-      ...league,
-      activePlayerCount: activePlayerCount,
-    };
-  }));
+  return Promise.resolve(leagues);
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {

@@ -35,7 +35,6 @@ export type League = {
   adminIds: string[];
   players: Player[];
   matches: Match[];
-  activePlayerCount?: number;
 };
 
 export type EloHistory = {
