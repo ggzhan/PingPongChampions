@@ -32,6 +32,8 @@ export type League = {
   id: string;
   name: string;
   description: string;
+  privacy: 'public' | 'private';
+  inviteCode?: string;
   adminIds: string[];
   players: Player[];
   matches: Match[];

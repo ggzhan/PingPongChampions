@@ -13,6 +13,10 @@ declare global {
 
 const g = globalThis as unknown as { dataStore: { users: User[], leagues: League[] } };
 
+function generateInviteCode(): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 if (!g.dataStore) {
   const initialUsers: User[] = [
     { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
@@ -66,6 +70,7 @@ if (!g.dataStore) {
       id: 'league-1',
       name: 'Office Champions League',
       description: 'The official ping pong league for the office. Settle your disputes over the table.',
+      privacy: 'public',
       adminIds: ['user-1'],
       players: [
         { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0, status: 'active' },
@@ -79,6 +84,8 @@ if (!g.dataStore) {
       id: 'league-2',
       name: 'Weekend Warriors',
       description: 'A casual league for weekend games.',
+      privacy: 'private',
+      inviteCode: generateInviteCode(),
       adminIds: ['user-1', 'user-3'],
       players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
       matches: [],
@@ -104,7 +111,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
   return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
 }
 
-export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches'>): Promise<League> {
+export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode'>): Promise<League> {
   const user = g.dataStore.users.find(u => u.id === leagueData.adminIds[0]);
   if (!user) {
     throw new Error("Admin user not found");
@@ -124,6 +131,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
   const newLeague: League = {
     id: `league-${Date.now()}`,
     ...leagueData,
+    inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : undefined,
     players: [newPlayer],
     matches: [],
   };
@@ -131,13 +139,37 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
   return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
 }
 
-export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description'>>): Promise<League> {
+export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description' | 'privacy'>>): Promise<League> {
   const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === id);
   if (leagueIndex === -1) {
     throw new Error("League not found");
   }
-  g.dataStore.leagues[leagueIndex] = { ...g.dataStore.leagues[leagueIndex], ...updates };
+
+  const league = g.dataStore.leagues[leagueIndex];
+  league.name = updates.name ?? league.name;
+  league.description = updates.description ?? league.description;
+  
+  if (updates.privacy && updates.privacy !== league.privacy) {
+    league.privacy = updates.privacy;
+    if (league.privacy === 'private' && !league.inviteCode) {
+        league.inviteCode = generateInviteCode();
+    }
+  }
+
+  g.dataStore.leagues[leagueIndex] = league;
   return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues[leagueIndex])));
+}
+
+export async function regenerateInviteCode(leagueId: string): Promise<string | undefined> {
+    const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
+    if (leagueIndex === -1) throw new Error("League not found");
+
+    const league = g.dataStore.leagues[leagueIndex];
+    if (league.privacy !== 'private') return undefined;
+
+    league.inviteCode = generateInviteCode();
+    g.dataStore.leagues[leagueIndex] = league;
+    return Promise.resolve(league.inviteCode);
 }
 
 export async function deleteLeague(leagueId: string): Promise<void> {
@@ -240,6 +272,15 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
     }
   }
   return Promise.resolve();
+}
+
+export async function joinLeagueByInviteCode(inviteCode: string, userId: string): Promise<League> {
+    const league = g.dataStore.leagues.find(l => l.inviteCode === inviteCode && l.privacy === 'private');
+    if (!league) {
+        throw new Error("Invalid invite code or league is not private.");
+    }
+    await addUserToLeague(league.id, userId);
+    return Promise.resolve(JSON.parse(JSON.stringify(league)));
 }
 
 export async function removePlayerFromLeague(leagueId: string, userId: string): Promise<void> {

@@ -3,9 +3,9 @@
 
 import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
 import { notFound, useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, UserPlus, Share2, LogOut } from "lucide-react";
+import { Settings, UserPlus, Share2, LogOut, Globe, Lock } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
@@ -22,7 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 type LeaguePageProps = {
   params: { leagueId: string };
@@ -36,9 +37,8 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const leagueId = params.leagueId;
     async function fetchLeague() {
-      const leagueData = await getLeagueById(leagueId);
+      const leagueData = await getLeagueById(params.leagueId);
       if (leagueData) {
         setLeague(leagueData);
       }
@@ -59,12 +59,11 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const isMember = user && league.players.some(p => p.id === user.id && p.status === 'active');
 
   const handleJoinLeague = async () => {
-    if (user && !isMember) {
-      await addUserToLeague(league.id, user.id);
+    if (user && !isMember && league.privacy === 'public') {
       const updatedLeague = await getLeagueById(league.id);
-      if (updatedLeague) {
-        setLeague(updatedLeague);
-      }
+      setLeague(updatedLeague);
+      await addUserToLeague(league.id, user.id);
+      
       toast({
         title: "League Joined!",
         description: `You are now a member of ${league.name}.`,
@@ -94,11 +93,17 @@ export default function LeaguePage({ params }: LeaguePageProps) {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-start">
             <div>
-              <CardTitle className="text-3xl font-bold font-headline mb-2">{league.name}</CardTitle>
+               <div className="flex items-center gap-4 mb-2">
+                <CardTitle className="text-3xl font-bold font-headline">{league.name}</CardTitle>
+                <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
+                    {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
+                    {league.privacy}
+                </Badge>
+              </div>
               <CardDescription className="max-w-2xl">{league.description}</CardDescription>
             </div>
             <div className="flex items-center gap-2 mt-4 md:mt-0">
-               {!isMember && user && (
+               {!isMember && user && league.privacy === 'public' && (
                 <Button onClick={handleJoinLeague}>
                   <UserPlus className="mr-2 h-4 w-4" /> Join League
                 </Button>
@@ -115,7 +120,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
                       <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
                       <AlertDialogDescription>
                         You will be removed from the leaderboard, but your match history will be kept. 
-                        You can rejoin the league at any time.
+                        You can rejoin the league at any time if it's public.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

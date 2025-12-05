@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { createLeague } from "@/lib/data";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
+import { Lock, Globe } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -31,6 +33,9 @@ const formSchema = z.object({
   description: z.string().max(300, {
     message: "Description must not be longer than 300 characters."
   }).optional(),
+  privacy: z.enum(["public", "private"], {
+    required_error: "You need to select a privacy setting.",
+  }),
 });
 
 export default function CreateLeaguePage() {
@@ -43,6 +48,7 @@ export default function CreateLeaguePage() {
     defaultValues: {
       name: "",
       description: "",
+      privacy: "public",
     },
   });
 
@@ -60,6 +66,7 @@ export default function CreateLeaguePage() {
       const newLeague = await createLeague({
           name: values.name,
           description: values.description || '',
+          privacy: values.privacy,
           adminIds: [user.id],
       });
       toast({
@@ -118,12 +125,53 @@ export default function CreateLeaguePage() {
                                     {...field}
                                     />
                             </FormControl>
-                            <FormDescription>
+                             <FormDescription>
                                 A brief description of your league's purpose, rules, or members.
                             </FormDescription>
                             <FormMessage />
                             </FormItem>
                         )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="privacy"
+                          render={({ field }) => (
+                            <FormItem className="space-y-3">
+                              <FormLabel>Privacy</FormLabel>
+                               <FormDescription>
+                                Choose who can see and join your league.
+                            </FormDescription>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                >
+                                  <FormItem>
+                                    <RadioGroupItem value="public" id="public" className="sr-only" />
+                                     <Label htmlFor="public" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                        <Globe className="mb-3 h-6 w-6" />
+                                        Public
+                                        <p className="text-sm font-normal text-muted-foreground mt-2 text-center">Anyone can find and join this league.</p>
+                                    </Label>
+                                  </FormItem>
+                                  <FormItem>
+                                    <RadioGroupItem
+                                      value="private"
+                                      id="private"
+                                      className="sr-only"
+                                    />
+                                    <Label htmlFor="private" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                        <Lock className="mb-3 h-6 w-6" />
+                                        Private
+                                        <p className="text-sm font-normal text-muted-foreground mt-2 text-center">Only people with an invite code can join.</p>
+                                    </Label>
+                                  </FormItem>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                         <Button type="submit">Create League</Button>
                     </form>

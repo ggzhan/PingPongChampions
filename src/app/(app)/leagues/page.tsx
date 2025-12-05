@@ -4,10 +4,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, KeyRound, Globe, Lock } from "lucide-react";
 import { getLeagues } from "@/lib/data";
 import { useState, useEffect } from "react";
 import type { League } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 
 export default function LeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -27,11 +28,18 @@ export default function LeaguesPage() {
       <div>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
-          <Button asChild>
-            <Link href="/leagues/create">
-              <PlusCircle className="mr-2 h-4 w-4" /> Create League
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/leagues/join">
+                <KeyRound className="mr-2 h-4 w-4" /> Join with Code
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/leagues/create">
+                <PlusCircle className="mr-2 h-4 w-4" /> Create League
+              </Link>
+            </Button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -55,11 +63,18 @@ export default function LeaguesPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold font-headline">Leagues</h1>
-        <Button asChild>
-          <Link href="/leagues/create">
-            <PlusCircle className="mr-2 h-4 w-4" /> Create League
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/leagues/join">
+                <KeyRound className="mr-2 h-4 w-4" /> Join with Code
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/leagues/create">
+                <PlusCircle className="mr-2 h-4 w-4" /> Create League
+              </Link>
+            </Button>
+          </div>
       </div>
       
       {leagues.length === 0 ? (
@@ -78,11 +93,19 @@ export default function LeaguesPage() {
           {leagues.map((league) => (
             <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle className="font-headline">{league.name}</CardTitle>
-                <CardDescription className="flex-grow min-h-[40px]">{league.description || 'No description available.'}</CardDescription>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="font-headline pr-4">{league.name}</CardTitle>
+                    <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
+                        {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
+                        {league.privacy}
+                    </Badge>
+                </div>
+                <CardDescription className="flex-grow min-h-[40px] pt-2">{league.description || 'No description available.'}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                
+                 <div className="text-sm text-muted-foreground">
+                    {league.players.filter(p => p.status === 'active').length} active players
+                 </div>
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full">
