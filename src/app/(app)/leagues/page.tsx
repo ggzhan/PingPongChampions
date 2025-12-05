@@ -25,6 +25,7 @@ export default async function LeaguesPage() {
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <h2 className="text-xl font-semibold">No leagues found</h2>
           <p className="text-muted-foreground mt-2">Be the first to create one!</p>
+
           <Button asChild className="mt-4">
             <Link href="/leagues/create">
               <PlusCircle className="mr-2 h-4 w-4" /> Create League

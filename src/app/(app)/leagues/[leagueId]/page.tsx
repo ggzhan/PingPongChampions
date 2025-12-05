@@ -50,15 +50,17 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const handleJoinLeague = async () => {
     if (user && !isMember) {
       await addUserToLeague(league.id, user.id);
+      // Immediately fetch the updated league data to refresh the state
       const updatedLeague = await getLeagueById(league.id);
-       if (updatedLeague) {
+      if (updatedLeague) {
         setLeague(updatedLeague);
       }
       toast({
         title: "League Joined!",
         description: `You are now a member of ${league.name}.`,
-      })
-      router.refresh(); // Refresh to show updated data
+      });
+      // Refresh server-side data for other pages
+      router.refresh(); 
     }
   };
 
