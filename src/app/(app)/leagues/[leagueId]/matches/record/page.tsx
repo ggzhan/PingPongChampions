@@ -13,13 +13,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,6 +24,7 @@ import type { Player, League } from "@/lib/types";
 import { ArrowLeft, User as UserIcon, Users } from "lucide-react";
 import Link from 'next/link';
 import { useApp } from "@/context/app-context";
+import { PlayerCombobox } from "./components/player-combobox";
 
 const formSchema = z.object({
   playerAId: z.string().min(1, "Player A is required."),
@@ -83,8 +77,8 @@ export default function RecordMatchPage() {
     defaultValues: {
       playerAId: "",
       playerBId: "",
-      playerAScore: '',
-      playerBScore: '',
+      playerAScore: '' as any,
+      playerBScore: '' as any,
       winnerId: "",
     }
   });
@@ -152,22 +146,15 @@ export default function RecordMatchPage() {
                     control={form.control}
                     name="playerAId"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Player A</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a player" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {activePlayers.map(p => (
-                              <SelectItem key={p.id} value={p.id} disabled={p.id === playerBId}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <PlayerCombobox
+                          players={activePlayers}
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabledPlayerId={playerBId}
+                          placeholder="Select Player A"
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -176,22 +163,15 @@ export default function RecordMatchPage() {
                     control={form.control}
                     name="playerBId"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Player B</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a player" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {activePlayers.map(p => (
-                              <SelectItem key={p.id} value={p.id} disabled={p.id === playerAId}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <PlayerCombobox
+                          players={activePlayers}
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabledPlayerId={playerAId}
+                          placeholder="Select Player B"
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -279,5 +259,3 @@ export default function RecordMatchPage() {
     </div>
   );
 }
-
-    
