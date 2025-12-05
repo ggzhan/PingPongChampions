@@ -1,9 +1,8 @@
 import { getPlayerStats } from "@/lib/data";
 import { notFound } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, User as UserIcon } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import EloChart from "./components/elo-chart";
 
@@ -24,10 +23,9 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-col md:flex-row items-center gap-6">
-          <Avatar className="w-24 h-24 text-4xl">
-            <AvatarImage src={player.avatarUrl} alt={player.name} />
-            <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+            <UserIcon className="w-12 h-12 text-muted-foreground"/>
+          </div>
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-3xl font-bold font-headline">{player.name}</h1>
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-6 gap-y-2 mt-2 text-muted-foreground">
@@ -74,10 +72,9 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                         {Object.values(headToHead).map(h2h => (
                              <TableRow key={h2h.opponentName}>
                                 <TableCell className="flex items-center gap-2">
-                                    <Avatar className="w-6 h-6">
-                                        <AvatarImage src={h2h.opponentAvatar} />
-                                        <AvatarFallback>{h2h.opponentName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
+                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                        <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                    </div>
                                     {h2h.opponentName}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">{h2h.wins} - {h2h.losses}</TableCell>
@@ -107,7 +104,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 <TableBody>
                     {matchHistory.map(match => {
                         const isPlayerA = match.playerAId === player.id;
-                        const opponent = isPlayerA ? { name: match.playerBName, avatar: match.playerBAvatar } : { name: match.playerAName, avatar: match.playerAAvatar };
+                        const opponent = isPlayerA ? { name: match.playerBName } : { name: match.playerAName };
                         const won = match.winnerId === player.id;
                         const score = isPlayerA ? `${match.playerAScore}-${match.playerBScore}` : `${match.playerBScore}-${match.playerAScore}`;
                         const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
@@ -115,10 +112,9 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                         return (
                              <TableRow key={match.id}>
                                 <TableCell className="flex items-center gap-2">
-                                     <Avatar className="w-6 h-6">
-                                        <AvatarImage src={opponent.avatar} />
-                                        <AvatarFallback>{opponent.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
+                                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                        <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                    </div>
                                     {opponent.name}
                                 </TableCell>
                                 <TableCell>{won ? <span className="text-green-600 font-semibold">Win</span> : <span className="text-red-600 font-semibold">Loss</span>}</TableCell>

@@ -2,7 +2,6 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  avatarUrl: string;
 };
 
 export type Player = User & {
@@ -18,8 +17,6 @@ export type Match = {
   playerBId: string;
   playerAName: string;
   playerBName: string;
-  playerAAvatar: string;
-  playerBAvatar: string;
   playerAScore: number;
   playerBScore: number;
   winnerId: string;
@@ -51,7 +48,6 @@ export type PlayerStats = {
   headToHead: {
     [opponentId: string]: {
       opponentName: string;
-      opponentAvatar: string;
       wins: number;
       losses: number;
       matches: number;

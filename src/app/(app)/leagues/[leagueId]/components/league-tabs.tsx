@@ -2,11 +2,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { League } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle } from "lucide-react";
+import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle, User as UserIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 
@@ -42,10 +41,9 @@ export default function LeagueTabs({ league }: { league: League }) {
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
                        <Link href={`/leagues/${league.id}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
-                        <Avatar>
-                          <AvatarImage src={player.avatarUrl} alt={player.name} />
-                          <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <UserIcon className="w-4 h-4 text-muted-foreground" />
+                        </div>
                         <span className="font-medium">{player.name}</span>
                       </Link>
                     </TableCell>
@@ -71,10 +69,9 @@ export default function LeagueTabs({ league }: { league: League }) {
                         <div className="flex flex-col items-end">
                             <div className="flex items-center gap-2">
                                 <span className="font-semibold">{match.playerAName}</span>
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage src={match.playerAAvatar} />
-                                    <AvatarFallback>{match.playerAName.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                    <UserIcon className="w-4 h-4 text-muted-foreground" />
+                                </div>
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center">
                                 {match.eloChangeA >= 0 ? <ArrowUp className="w-3 h-3 text-green-500"/> : <ArrowDown className="w-3 h-3 text-red-500"/>}
@@ -87,10 +84,9 @@ export default function LeagueTabs({ league }: { league: League }) {
                         </div>
                         <div className="flex flex-col items-start">
                              <div className="flex items-center gap-2">
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage src={match.playerBAvatar} />
-                                    <AvatarFallback>{match.playerBName.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                    <UserIcon className="w-4 h-4 text-muted-foreground" />
+                                </div>
                                 <span className="font-semibold">{match.playerBName}</span>
                             </div>
                              <div className="text-xs text-muted-foreground flex items-center">
@@ -117,10 +113,9 @@ export default function LeagueTabs({ league }: { league: League }) {
                 {league.players.map(player => (
                     <Link key={player.id} href={`/leagues/${league.id}/players/${player.id}`}>
                         <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-accent/10 hover:border-primary/50 transition-colors">
-                            <Avatar className="w-16 h-16">
-                                <AvatarImage src={player.avatarUrl} alt={player.name} />
-                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                                <UserIcon className="w-8 h-8 text-muted-foreground" />
+                            </div>
                             <span className="font-semibold">{player.name}</span>
                             <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
                         </div>

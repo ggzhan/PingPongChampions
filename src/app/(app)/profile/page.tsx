@@ -1,16 +1,16 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { User as UserIcon } from "lucide-react";
 
 // Mock data, in a real app this would come from an API
 const user = {
-  name: 'John Doe',
+  name: 'AlpacaRacer',
   email: 'john.doe@example.com',
-  avatarUrl: 'https://picsum.photos/seed/user1/100/100',
-  bio: 'Just a casual ping pong enthusiast.',
+  showEmail: false,
 };
 
 const userLeagues = [
@@ -54,31 +54,33 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <Button variant="outline">Change Photo</Button>
+                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                            <UserIcon className="w-8 h-8 text-muted-foreground"/>
+                        </div>
+                        <p className="font-semibold text-lg">{user.name}</p>
                     </div>
 
                     <Separator />
                     
                     <form className="space-y-4">
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input id="name" defaultValue={user.name} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" defaultValue={user.email} />
-                            </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="name">Username</Label>
+                            <Input id="name" defaultValue={user.name} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" defaultValue={user.email} />
                         </div>
 
-                         <div className="space-y-2">
-                            <Label htmlFor="bio">Bio</Label>
-                            <Input id="bio" defaultValue={user.bio} />
-                        </div>
+                         <div className="flex items-center justify-between rounded-lg border p-3">
+                           <div className="space-y-0.5">
+                              <Label>Show Email on Profile</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Allow other users to see your email address.
+                              </p>
+                            </div>
+                           <Switch defaultChecked={user.showEmail} />
+                         </div>
                         
                         <div className="pt-2">
                              <Button>Save Changes</Button>
