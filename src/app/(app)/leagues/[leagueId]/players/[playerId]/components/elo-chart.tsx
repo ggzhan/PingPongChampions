@@ -40,8 +40,12 @@ export default function EloChart({ data }: { data: EloHistory[] }) {
           axisLine={false}
           tickMargin={8}
           domain={['dataMin - 20', 'dataMax + 20']}
+          allowDecimals={false}
         />
-        <Tooltip content={<ChartTooltipContent />} />
+        <Tooltip 
+            content={<ChartTooltipContent />} 
+            formatter={(value) => Math.round(Number(value))}
+        />
         <Line dataKey="elo" type="monotone" stroke="var(--color-elo)" strokeWidth={2} dot={true} />
       </LineChart>
     </ChartContainer>
