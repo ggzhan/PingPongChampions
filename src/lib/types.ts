@@ -1,0 +1,60 @@
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+};
+
+export type Player = User & {
+  elo: number;
+  wins: number;
+  losses: number;
+};
+
+export type Match = {
+  id: string;
+  leagueId: string;
+  playerAId: string;
+  playerBId: string;
+  playerAName: string;
+  playerBName: string;
+  playerAAvatar: string;
+  playerBAvatar: string;
+  playerAScore: number;
+  playerBScore: number;
+  winnerId: string;
+  eloChangeA: number;
+  eloChangeB: number;
+  createdAt: string; // ISO date string
+};
+
+export type League = {
+  id: string;
+  name: string;
+  description: string;
+  adminIds: string[];
+  players: Player[];
+  matches: Match[];
+};
+
+export type EloHistory = {
+  date: string; // YYYY-MM-DD
+  elo: number;
+};
+
+export type PlayerStats = {
+  player: Player;
+  leagueId: string;
+  rank: number;
+  eloHistory: EloHistory[];
+  matchHistory: Match[];
+  headToHead: {
+    [opponentId: string]: {
+      opponentName: string;
+      opponentAvatar: string;
+      wins: number;
+      losses: number;
+      matches: number;
+    };
+  };
+};

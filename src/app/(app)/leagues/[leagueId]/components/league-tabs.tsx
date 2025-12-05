@@ -1,0 +1,135 @@
+"use client";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { League } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { ArrowUp, ArrowDown, ChevronsRight, PlusCircle } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import Link from 'next/link';
+
+export default function LeagueTabs({ league }: { league: League }) {
+  const sortedPlayers = [...league.players].sort((a, b) => b.elo - a.elo);
+  const sortedMatches = [...league.matches].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return (
+    <Tabs defaultValue="rankings" className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="rankings">Rankings</TabsTrigger>
+        <TabsTrigger value="matches">Matches</TabsTrigger>
+        <TabsTrigger value="players">Players</TabsTrigger>
+      </TabsList>
+      <TabsContent value="rankings">
+        <Card>
+          <CardHeader>
+            <CardTitle>Leaderboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">Rank</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="text-right">ELO</TableHead>
+                  <TableHead className="text-right">W/L</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedPlayers.map((player, index) => (
+                  <TableRow key={player.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell>
+                       <Link href={`/leagues/${league.id}/players/${player.id}`} className="flex items-center gap-3 hover:underline">
+                        <Avatar>
+                          <AvatarImage src={player.avatarUrl} alt={player.name} />
+                          <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{player.name}</span>
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{player.elo}</TableCell>
+                    <TableCell className="text-right">{player.wins}/{player.losses}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      <TabsContent value="matches">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Match History</CardTitle>
+            <Button><PlusCircle className="mr-2 h-4 w-4"/>Record Match</Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             {sortedMatches.map((match) => (
+                <div key={match.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold">{match.playerAName}</span>
+                                <Avatar className="w-8 h-8">
+                                    <AvatarImage src={match.playerAAvatar} />
+                                    <AvatarFallback>{match.playerAName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center">
+                                {match.eloChangeA >= 0 ? <ArrowUp className="w-3 h-3 text-green-500"/> : <ArrowDown className="w-3 h-3 text-red-500"/>}
+                                {Math.abs(match.eloChangeA)} ELO
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <div className="font-bold text-lg">{match.playerAScore} - {match.playerBScore}</div>
+                            <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}</div>
+                        </div>
+                        <div className="flex flex-col items-start">
+                             <div className="flex items-center gap-2">
+                                <Avatar className="w-8 h-8">
+                                    <AvatarImage src={match.playerBAvatar} />
+                                    <AvatarFallback>{match.playerBName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-semibold">{match.playerBName}</span>
+                            </div>
+                             <div className="text-xs text-muted-foreground flex items-center">
+                                {match.eloChangeB >= 0 ? <ArrowUp className="w-3 h-3 text-green-500"/> : <ArrowDown className="w-3 h-3 text-red-500"/>}
+                                {Math.abs(match.eloChangeB)} ELO
+                            </div>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="icon">
+                        <ChevronsRight className="h-5 w-5" />
+                    </Button>
+                </div>
+            ))}
+          </CardContent>
+        </Card>
+      </TabsContent>
+      <TabsContent value="players">
+        <Card>
+          <CardHeader>
+            <CardTitle>Players</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {league.players.map(player => (
+                    <Link key={player.id} href={`/leagues/${league.id}/players/${player.id}`}>
+                        <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-accent/10 hover:border-primary/50 transition-colors">
+                            <Avatar className="w-16 h-16">
+                                <AvatarImage src={player.avatarUrl} alt={player.name} />
+                                <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{player.name}</span>
+                            <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
+                        </div>
+                    </Link>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  );
+}
