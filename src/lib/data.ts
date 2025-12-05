@@ -199,18 +199,18 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   const matchHistory = (league.matches || []).filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
-  const eloHistory: EloHistory[] = [{ date: new Date().toISOString().split('T')[0], elo: player.elo }];
-  
-  if (matchHistory.length > 0) {
-      eloHistory.pop(); // Remove the initial point, we'll build from matches
-      const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      let runningElo = player.elo;
+  let eloHistory: EloHistory[] = [];
 
+  if (matchHistory.length > 0) {
+      let runningElo = player.elo;
       // Trace ELO history backwards from the present
       eloHistory.unshift({
           date: new Date().toISOString().split('T')[0],
           elo: runningElo
       });
+
+      // Create a reversed copy for chronological processing
+      const allMatchesChronological = [...matchHistory].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
       for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
           const match = allMatchesChronological[i];
@@ -221,15 +221,15 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
               elo: runningElo
           });
       }
-  }
-
-  // If there is only one ELO point (e.g., from initial creation), add a dummy point for the previous day to allow the chart to draw a flat line.
-  if (eloHistory.length === 1) {
-    const firstPoint = eloHistory[0];
-    eloHistory.unshift({
-      date: new Date(new Date(firstPoint.date).getTime() - 86400000).toISOString().split('T')[0],
-      elo: firstPoint.elo
-    });
+  } else {
+     // If no matches, create a simple two-point history to draw a flat line.
+     const today = new Date();
+     const yesterday = new Date(today);
+     yesterday.setDate(today.getDate() - 1);
+     eloHistory = [
+        { date: yesterday.toISOString().split('T')[0], elo: player.elo },
+        { date: today.toISOString().split('T')[0], elo: player.elo }
+     ];
   }
 
 
@@ -423,5 +423,3 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
-
-    

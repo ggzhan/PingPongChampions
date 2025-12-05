@@ -10,11 +10,13 @@ import { getLeagues } from "@/lib/data";
 import { useState, useEffect } from "react";
 import type { League } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/context/user-context";
 
 export default function LeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useUser();
 
   useEffect(() => {
     async function fetchLeagues() {
