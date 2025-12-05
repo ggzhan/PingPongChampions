@@ -2,7 +2,7 @@
 // In a real application, this would be a database.
 // For this example, we're using an in-memory store.
 // We attach it to the global object to prevent it from being cleared on hot-reloads.
-import type { League, User, Match, Player, PlayerStats } from './types';
+import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
 
 declare global {
   var dataStore: {
@@ -188,14 +188,10 @@ export async function deleteLeague(leagueId: string): Promise<void> {
 
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
   const league = await getLeagueById(leagueId);
-  if (!league) {
-    return undefined;
-  }
+  if (!league) return undefined;
   
   const player = league.players.find(p => p.id === playerId);
-  if (!player || player.status === 'inactive') {
-    return undefined;
-  }
+  if (!player || player.status === 'inactive') return undefined;
   
   const sortedPlayers = [...league.players]
     .filter(p => p.status === 'active')
@@ -204,13 +200,46 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   
   const matchHistory = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  // Calculate ELO history
+  const eloHistory: EloHistory[] = [{ date: 'Start', elo: 1000, matchIndex: 0 }];
+  let currentElo = 1000;
+  matchHistory.forEach((match, index) => {
+    const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+    currentElo += eloChange;
+    eloHistory.push({
+      date: new Date(match.createdAt).toLocaleDateString(),
+      elo: currentElo,
+      matchIndex: index + 1,
+    });
+  });
+
+  // Calculate Head-to-Head stats
+  const headToHead: { [opponentId: string]: { opponentName: string, wins: number, losses: number } } = {};
+  matchHistory.forEach(match => {
+    const isPlayerA = match.playerAId === playerId;
+    const opponentId = isPlayerA ? match.playerBId : match.playerAId;
+    const opponentName = isPlayerA ? match.playerBName : match.playerAName;
+    const didWin = match.winnerId === playerId;
+
+    if (!headToHead[opponentId]) {
+      headToHead[opponentId] = { opponentName, wins: 0, losses: 0 };
+    }
+    if (didWin) {
+      headToHead[opponentId].wins += 1;
+    } else {
+      headToHead[opponentId].losses += 1;
+    }
+  });
 
   return {
     player: JSON.parse(JSON.stringify(player)),
     leagueId,
     rank,
-    matchHistory,
+    matchHistory: matchHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), // sort descending for display
+    eloHistory,
+    headToHeadStats: Object.entries(headToHead).map(([opponentId, stats]) => ({ opponentId, ...stats })),
   };
 }
 

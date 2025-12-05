@@ -43,8 +43,9 @@ export type League = {
 };
 
 export type EloHistory = {
-  date: string; // YYYY-MM-DD
+  date: string;
   elo: number;
+  matchIndex: number;
 };
 
 export type PlayerStats = {
@@ -52,6 +53,13 @@ export type PlayerStats = {
   leagueId: string;
   rank: number;
   matchHistory: Match[];
+  eloHistory: EloHistory[];
+  headToHeadStats: {
+    opponentId: string;
+    opponentName: string;
+    wins: number;
+    losses: number;
+  }[];
 };
 
 export type MatchResult = {
