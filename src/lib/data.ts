@@ -85,6 +85,7 @@ if (!g.dataStore) {
       name: 'Weekend Warriors',
       description: 'A casual league for weekend games.',
       privacy: 'private',
+      leaderboardVisible: true,
       inviteCode: generateInviteCode(),
       adminIds: ['user-1', 'user-3'],
       players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active'})),
@@ -142,7 +143,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
   return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
 }
 
-export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description' | 'privacy'>>): Promise<League> {
+export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description' | 'privacy' | 'leaderboardVisible'>>): Promise<League> {
   const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === id);
   if (leagueIndex === -1) {
     throw new Error("League not found");
@@ -151,6 +152,7 @@ export async function updateLeague(id: string, updates: Partial<Pick<League, 'na
   const league = g.dataStore.leagues[leagueIndex];
   league.name = updates.name ?? league.name;
   league.description = updates.description ?? league.description;
+  league.leaderboardVisible = updates.leaderboardVisible ?? league.leaderboardVisible;
   
   if (updates.privacy && updates.privacy !== league.privacy) {
     league.privacy = updates.privacy;
@@ -204,29 +206,34 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     let runningElo = player.elo;
 
     // Trace ELO history backwards from the present
+    eloHistory.unshift({
+        date: new Date().toISOString().split('T')[0],
+        elo: runningElo
+    });
     for (let i = allMatchesChronological.length - 1; i >= 0; i--) {
+        const match = allMatchesChronological[i];
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        runningElo -= eloChange;
         eloHistory.unshift({
             date: new Date(allMatchesChronological[i].createdAt).toISOString().split('T')[0],
             elo: runningElo
         });
-        const match = allMatchesChronological[i];
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        runningElo -= eloChange;
     }
-    
-    // Add the starting ELO point
-    if (allMatchesChronological.length > 0) {
-      eloHistory.unshift({
-          date: new Date(new Date(allMatchesChronological[0].createdAt).getTime() - 86400000).toISOString().split('T')[0], // One day before first match
-          elo: runningElo
-      });
-    }
+  }
 
-  } else {
-    // If no matches, ELO history is just one point for today and one for yesterday.
-    eloHistory.push({ date: new Date(Date.now() - 86400000).toISOString().split('T')[0], elo: player.elo });
+  // Ensure there's at least one point for the chart if no matches were played
+  if (eloHistory.length === 0) {
     eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
   }
+
+  // If there is only one point, add a dummy point for the previous day to draw a line
+  if (eloHistory.length === 1) {
+    eloHistory.unshift({
+      date: new Date(new Date(eloHistory[0].date).getTime() - 86400000).toISOString().split('T')[0],
+      elo: eloHistory[0].elo
+    });
+  }
+
 
   const headToHead: PlayerStats['headToHead'] = {};
   matchHistory.forEach(match => {
@@ -418,6 +425,3 @@ export async function recordMatch(
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
-
-
-

@@ -24,7 +24,7 @@ import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
 import type { League } from "@/lib/types";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, KeyRound, RefreshCw, Copy, Lock, Globe } from "lucide-react";
+import { ArrowLeft, AlertTriangle, KeyRound, RefreshCw, Copy, Lock, Globe, EyeOff } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -49,6 +50,7 @@ const formSchema = z.object({
     message: "Description must not be longer than 300 characters."
   }).optional(),
   privacy: z.enum(["public", "private"]),
+  leaderboardVisible: z.boolean().default(true),
 });
 
 export default function LeagueAdminPage({ params }: { params: { leagueId: string } }) {
@@ -65,6 +67,7 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
       name: "",
       description: "",
       privacy: "public",
+      leaderboardVisible: true,
     },
   });
 
@@ -80,6 +83,7 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
             name: leagueData.name,
             description: leagueData.description,
             privacy: leagueData.privacy,
+            leaderboardVisible: leagueData.leaderboardVisible ?? true,
         });
 
         if (!user || !leagueData.adminIds.includes(user.id)) {
@@ -232,16 +236,38 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
                         />
                         
                         {privacyValue === 'private' && (
-                            <div className="space-y-2">
-                                <Label>Invite Code</Label>
-                                <div className="flex gap-2">
-                                    <Input value={inviteCode} readOnly className="font-mono text-lg tracking-widest"/>
-                                    <Button type="button" variant="secondary" size="icon" onClick={copyInviteCode}><Copy className="h-4 w-4"/></Button>
-                                    <Button type="button" variant="outline" size="icon" onClick={handleRegenerateCode}><RefreshCw className="h-4 w-4"/></Button>
+                            <div className="space-y-4 rounded-md border p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="leaderboardVisible"
+                                    render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between">
+                                       <div className="space-y-0.5">
+                                          <FormLabel>Visible Leaderboard</FormLabel>
+                                          <FormDescription>
+                                            Can non-members see the leaderboard?
+                                          </FormDescription>
+                                        </div>
+                                       <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                       </FormControl>
+                                     </FormItem>
+                                    )}
+                                    />
+                                <div className="space-y-2">
+                                    <Label>Invite Code</Label>
+                                    <div className="flex gap-2">
+                                        <Input value={inviteCode} readOnly className="font-mono text-lg tracking-widest"/>
+                                        <Button type="button" variant="secondary" size="icon" onClick={copyInviteCode}><Copy className="h-4 w-4"/></Button>
+                                        <Button type="button" variant="outline" size="icon" onClick={handleRegenerateCode}><RefreshCw className="h-4 w-4"/></Button>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Share this code with people you want to invite to the league.
+                                    </p>
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Share this code with people you want to invite to the league.
-                                </p>
                             </div>
                         )}
 

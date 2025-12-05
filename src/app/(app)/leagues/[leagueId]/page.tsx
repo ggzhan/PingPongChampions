@@ -5,7 +5,7 @@ import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/da
 import { notFound, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, UserPlus, Share2, LogOut, Globe, Lock } from "lucide-react";
+import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
@@ -100,6 +100,8 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   };
   
   const showJoinForm = user && league.privacy === 'private' && !isMember;
+  const showLeaderboard = league.privacy === 'public' || (league.privacy === 'private' && league.leaderboardVisible) || isMember || isAdmin;
+
 
   return (
     <div className="space-y-6">
@@ -113,6 +115,11 @@ export default function LeaguePage({ params }: LeaguePageProps) {
                     {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
                     {league.privacy}
                 </Badge>
+                {league.privacy === 'private' && !league.leaderboardVisible && (
+                  <Badge variant="secondary" className="capitalize flex gap-1.5 items-center">
+                    <EyeOff className="h-3 w-3"/> Hidden Leaderboard
+                  </Badge>
+                )}
               </div>
               <CardDescription className="max-w-2xl">{league.description}</CardDescription>
             </div>
@@ -164,7 +171,15 @@ export default function LeaguePage({ params }: LeaguePageProps) {
          )}
       </Card>
 
-      {!showJoinForm && <LeagueTabs league={league} />}
+      {showLeaderboard && <LeagueTabs league={league} />}
+      {!showLeaderboard && !isMember && (
+         <Card className="text-center p-8">
+            <CardHeader>
+                <CardTitle>Leaderboard is Hidden</CardTitle>
+                <CardDescription>The administrator of this league has chosen to hide the leaderboard from non-members.</CardDescription>
+            </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }

@@ -33,6 +33,7 @@ export type League = {
   name: string;
   description: string;
   privacy: 'public' | 'private';
+  leaderboardVisible?: boolean;
   inviteCode?: string;
   adminIds: string[];
   players: Player[];
@@ -68,4 +69,3 @@ export type MatchResult = {
     playerBScore: number;
     winnerId: string;
 };
-

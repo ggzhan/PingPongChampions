@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
 import { Lock, Globe } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -37,6 +38,7 @@ const formSchema = z.object({
   privacy: z.enum(["public", "private"], {
     required_error: "You need to select a privacy setting.",
   }),
+  leaderboardVisible: z.boolean().default(true),
 });
 
 export default function CreateLeaguePage() {
@@ -50,8 +52,11 @@ export default function CreateLeaguePage() {
       name: "",
       description: "",
       privacy: "public",
+      leaderboardVisible: true,
     },
   });
+
+  const privacyValue = form.watch("privacy");
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
@@ -68,6 +73,7 @@ export default function CreateLeaguePage() {
           name: values.name,
           description: values.description || '',
           privacy: values.privacy,
+          leaderboardVisible: values.leaderboardVisible,
           adminIds: [user.id],
       });
       toast({
@@ -176,6 +182,28 @@ export default function CreateLeaguePage() {
                             </FormItem>
                           )}
                         />
+                        {privacyValue === 'private' && (
+                           <FormField
+                                control={form.control}
+                                name="leaderboardVisible"
+                                render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                   <div className="space-y-0.5">
+                                      <FormLabel>Visible Leaderboard</FormLabel>
+                                      <FormDescription>
+                                        Can non-members see the league's leaderboard and matches?
+                                      </FormDescription>
+                                    </div>
+                                   <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                   </FormControl>
+                                 </FormItem>
+                                )}
+                                />
+                        )}
                         <Button type="submit">Create League</Button>
                     </form>
                 </Form>
