@@ -118,7 +118,7 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline">Record a Match</CardTitle>
           <CardDescription>
-            Submit the results of a match played in &quot;{league.name}&quot;.
+            Enter the match results in sets (e.g., 3-2) for &quot;{league.name}&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -181,9 +181,9 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
                   name="playerAScore"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Player A Score</FormLabel>
+                      <FormLabel>Player A Score (Sets)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 11" {...field} />
+                        <Input type="number" placeholder="e.g. 3" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -194,9 +194,9 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
                   name="playerBScore"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Player B Score</FormLabel>
+                      <FormLabel>Player B Score (Sets)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g. 7" {...field} />
+                        <Input type="number" placeholder="e.g. 2" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
