@@ -26,7 +26,7 @@ export default function Home() {
             Ping Pong Champions
           </h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-primary-foreground/90">
-            The ultimate platform to create, manage, and compete in your own ping pong leagues. Free and easy to use.
+            Compete with friends in your own ping pong league. Free and easy to use.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
