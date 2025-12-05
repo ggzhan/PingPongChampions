@@ -2,7 +2,7 @@
 "use client";
 
 import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
-import { notFound, useRouter } from "next/navigation";
+import { notFound, useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff } from "lucide-react";
@@ -26,12 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import JoinPrivateLeagueForm from "./components/join-private-league-form";
 
-type LeaguePageProps = {
-  params: { leagueId: string };
-};
-
-export default function LeaguePage({ params }: LeaguePageProps) {
-  const { leagueId } = params;
+export default function LeaguePage() {
+  const params = useParams();
+  const leagueId = params.leagueId as string;
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
@@ -39,6 +36,7 @@ export default function LeaguePage({ params }: LeaguePageProps) {
   const { toast } = useToast();
 
   const fetchLeague = useCallback(async () => {
+    if (!leagueId) return;
     setLoading(true);
     const leagueData = await getLeagueById(leagueId);
     if (leagueData) {
@@ -184,3 +182,5 @@ export default function LeaguePage({ params }: LeaguePageProps) {
     </div>
   );
 }
+
+    

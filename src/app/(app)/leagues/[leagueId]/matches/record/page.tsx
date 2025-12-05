@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getLeagueById, recordMatch } from "@/lib/data";
-import { useRouter, notFound } from "next/navigation";
+import { useRouter, notFound, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Player, League } from "@/lib/types";
@@ -53,8 +53,9 @@ const formSchema = z.object({
 });
 
 
-export default function RecordMatchPage({ params }: { params: { leagueId: string } }) {
-  const { leagueId } = params;
+export default function RecordMatchPage() {
+  const params = useParams();
+  const leagueId = params.leagueId as string;
   const router = useRouter();
   const { toast } = useToast();
   const [league, setLeague] = useState<League | null>(null);
@@ -70,7 +71,9 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
       }
       setLoading(false);
     }
-    fetchLeague();
+    if (leagueId) {
+      fetchLeague();
+    }
   }, [leagueId]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -267,3 +270,5 @@ export default function RecordMatchPage({ params }: { params: { leagueId: string
     </div>
   );
 }
+
+    

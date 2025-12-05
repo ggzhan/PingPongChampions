@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getLeagueById, updateLeague, deleteLeague, regenerateInviteCode } from "@/lib/data";
-import { notFound, useRouter } from "next/navigation";
+import { notFound, useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
@@ -53,8 +53,9 @@ const formSchema = z.object({
   leaderboardVisible: z.boolean().default(true),
 });
 
-export default function LeagueAdminPage({ params }: { params: { leagueId: string } }) {
-  const { leagueId } = params;
+export default function LeagueAdminPage() {
+  const params = useParams();
+  const leagueId = params.leagueId as string;
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
@@ -100,7 +101,9 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
       setLoading(false);
     }
 
-    fetchLeague();
+    if (leagueId && user) {
+        fetchLeague();
+    }
   }, [leagueId, user, router, toast, form]);
 
 
@@ -309,3 +312,5 @@ export default function LeagueAdminPage({ params }: { params: { leagueId: string
     </div>
   );
 }
+
+    

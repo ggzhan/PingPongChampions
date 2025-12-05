@@ -95,3 +95,5 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
     </>
   );
 }
+
+    
