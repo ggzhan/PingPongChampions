@@ -186,30 +186,15 @@ export async function deleteLeague(leagueId: string): Promise<void> {
   return Promise.resolve();
 }
 
-export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
+export async function getPlayerStats(leagueId: string, playerId: string): Promise<Player | undefined> {
   const league = await getLeagueById(leagueId);
-  if (!league || !league.players) return undefined;
-
+  if (!league || !league.players) {
+    return undefined;
+  }
   const player = league.players.find(p => p.id === playerId);
-  if (!player) return undefined;
-
-  const matchHistory = (league.matches || [])
-    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  // Rank Calculation
-  const rankedPlayers = [...league.players]
-    .filter(p => p.status === 'active')
-    .sort((a, b) => b.elo - a.elo);
-  const rank = rankedPlayers.findIndex(p => p.id === playerId) + 1;
-
-  return Promise.resolve({
-    player,
-    leagueId,
-    rank: player.status === 'active' ? rank : -1,
-    matchHistory,
-  });
+  return player;
 }
+
 
 export async function addUserToLeague(leagueId: string, userId: string): Promise<void> {
   const league = g.dataStore.leagues.find(l => l.id === leagueId);
@@ -368,9 +353,13 @@ export async function recordMatch(
     createdAt: new Date().toISOString(),
   };
 
+  if (!league.matches) {
+    league.matches = [];
+  }
   league.matches.push(newMatch);
 
   g.dataStore.leagues[leagueIndex] = league;
 
   return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
 }
+
