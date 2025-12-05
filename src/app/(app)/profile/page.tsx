@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { User as UserIcon } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -21,14 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useUser } from "@/context/user-context";
+import { useEffect } from "react";
 
-
-// Mock data, in a real app this would come from an API
-const user = {
-  name: 'AlpacaRacer',
-  email: 'john.doe@example.com',
-  showEmail: false,
-};
 
 const userLeagues = [
     { id: 'league-1', name: 'Office Champions League', rank: 2, elo: 1016 },
@@ -60,15 +55,26 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function ProfilePage() {
     const { toast } = useToast();
+    const { user, updateUser } = useUser();
 
     const accountForm = useForm<AccountFormValues>({
         resolver: zodResolver(accountFormSchema),
         defaultValues: {
-            name: user.name,
-            email: user.email,
-            showEmail: user.showEmail,
+            name: '',
+            email: '',
+            showEmail: false,
         },
     });
+
+    useEffect(() => {
+        if (user) {
+            accountForm.reset({
+                name: user.name,
+                email: user.email,
+                showEmail: user.showEmail,
+            });
+        }
+    }, [user, accountForm]);
 
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordFormSchema),
@@ -80,17 +86,14 @@ export default function ProfilePage() {
     });
 
     function onAccountSubmit(data: AccountFormValues) {
-        // In a real app, you'd call an API to update the user
-        console.log("Account data submitted:", data);
+        updateUser(data);
         toast({
             title: "Account Updated",
             description: "Your account settings have been saved.",
         });
-        // To see the changes reflected, you'd re-fetch user data here
     }
 
     function onPasswordSubmit(data: PasswordFormValues) {
-        // In a real app, you'd call an API to update the password
         console.log("Password data submitted:", data);
         toast({
             title: "Password Updated",
@@ -260,5 +263,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
