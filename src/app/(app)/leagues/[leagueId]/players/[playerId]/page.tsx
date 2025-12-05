@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowUp, ArrowDown, User as UserIcon } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import EloChart from "./components/elo-chart";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type PlayerPageProps = {
   params: { leagueId: string, playerId: string };
@@ -61,27 +62,35 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 <CardTitle>Head-to-Head</CardTitle>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Opponent</TableHead>
-                            <TableHead className="text-right">Record</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {Object.values(headToHead).map(h2h => (
-                             <TableRow key={h2h.opponentName}>
-                                <TableCell className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                        <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                    </div>
-                                    {h2h.opponentName}
-                                </TableCell>
-                                <TableCell className="text-right font-mono">{h2h.wins} - {h2h.losses}</TableCell>
+                {Object.keys(headToHead).length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                    No head-to-head data yet.
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[250px]">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Opponent</TableHead>
+                                <TableHead className="text-right">Record</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {Object.values(headToHead).map(h2h => (
+                                 <TableRow key={h2h.opponentName}>
+                                    <TableCell className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                            <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                        </div>
+                                        {h2h.opponentName}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono">{h2h.wins} - {h2h.losses}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
             </CardContent>
         </Card>
       </div>
@@ -91,44 +100,50 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             <CardTitle>Recent Matches</CardTitle>
         </CardHeader>
         <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Opponent</TableHead>
-                        <TableHead>Result</TableHead>
-                        <TableHead>Score</TableHead>
-                        <TableHead>ELO Change</TableHead>
-                        <TableHead className="text-right">Date</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {matchHistory.map(match => {
-                        const isPlayerA = match.playerAId === player.id;
-                        const opponent = isPlayerA ? { name: match.playerBName } : { name: match.playerAName };
-                        const won = match.winnerId === player.id;
-                        const score = isPlayerA ? `${match.playerAScore}-${match.playerBScore}` : `${match.playerBScore}-${match.playerAScore}`;
-                        const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
+            {matchHistory.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No matches recorded yet.</p>
+              </div>
+            ) : (
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Opponent</TableHead>
+                          <TableHead>Result</TableHead>
+                          <TableHead>Score</TableHead>
+                          <TableHead>ELO Change</TableHead>
+                          <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {matchHistory.map(match => {
+                          const isPlayerA = match.playerAId === player.id;
+                          const opponent = isPlayerA ? { name: match.playerBName } : { name: match.playerAName };
+                          const won = match.winnerId === player.id;
+                          const score = isPlayerA ? `${match.playerAScore}-${match.playerBScore}` : `${match.playerBScore}-${match.playerAScore}`;
+                          const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
 
-                        return (
-                             <TableRow key={match.id}>
-                                <TableCell className="flex items-center gap-2">
-                                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                        <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                    </div>
-                                    {opponent.name}
-                                </TableCell>
-                                <TableCell>{won ? <span className="text-green-600 font-semibold">Win</span> : <span className="text-red-600 font-semibold">Loss</span>}</TableCell>
-                                <TableCell className="font-mono">{score}</TableCell>
-                                <TableCell className={`flex items-center font-semibold ${eloChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {eloChange >= 0 ? <ArrowUp className="w-4 h-4 mr-1"/> : <ArrowDown className="w-4 h-4 mr-1"/>}
-                                    {Math.abs(eloChange)}
-                                </TableCell>
-                                <TableCell className="text-right text-muted-foreground">{format(parseISO(match.createdAt), 'MMM d, yyyy')}</TableCell>
-                            </TableRow>
-                        );
-                    })}
-                </TableBody>
-            </Table>
+                          return (
+                               <TableRow key={match.id}>
+                                  <TableCell className="flex items-center gap-2">
+                                       <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                          <UserIcon className="w-3 h-3 text-muted-foreground" />
+                                      </div>
+                                      {opponent.name}
+                                  </TableCell>
+                                  <TableCell>{won ? <span className="text-green-600 font-semibold">Win</span> : <span className="text-red-600 font-semibold">Loss</span>}</TableCell>
+                                  <TableCell className="font-mono">{score}</TableCell>
+                                  <TableCell className={`flex items-center font-semibold ${eloChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {eloChange >= 0 ? <ArrowUp className="w-4 h-4 mr-1"/> : <ArrowDown className="w-4 h-4 mr-1"/>}
+                                      {Math.abs(eloChange)}
+                                  </TableCell>
+                                  <TableCell className="text-right text-muted-foreground">{format(parseISO(match.createdAt), 'MMM d, yyyy')}</TableCell>
+                              </TableRow>
+                          );
+                      })}
+                  </TableBody>
+              </Table>
+            )}
         </CardContent>
       </Card>
     </div>

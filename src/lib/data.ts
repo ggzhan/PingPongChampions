@@ -124,23 +124,27 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(b.createdAt).getTime());
     
   const eloHistory: {date: string, elo: number}[] = [];
-  let currentElo = 1000;
+  let currentElo = 1000; // Starting ELO
   
   const playerMatches = (league.matches || [])
     .filter(m => m.playerAId === playerId || m.playerBId === playerId)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  
+  // A player always starts with a base ELO, even with no matches.
+  // We can add a starting point for the graph.
+  // The player page will check if there's enough data to draw a line.
+  eloHistory.push({ date: new Date().toISOString().split('T')[0], elo: player.elo });
 
-  if (playerMatches.length > 0) {
-      eloHistory.push({ date: '2023-01-01', elo: 1000 });
-      playerMatches.forEach(match => {
-        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-        currentElo += eloChange;
-        eloHistory.push({
-          date: new Date(match.createdAt).toISOString().split('T')[0],
-          elo: currentElo
-        });
-    });
-  }
+  let runningElo = 1000;
+  // Recalculate ELO history from matches
+  playerMatches.forEach(match => {
+      const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+      runningElo += eloChange;
+      eloHistory.push({
+        date: new Date(match.createdAt).toISOString().split('T')[0],
+        elo: runningElo
+      });
+  });
 
 
   const headToHead: PlayerStats['headToHead'] = {};
@@ -162,14 +166,14 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
   });
 
 
-  return {
+  return Promise.resolve({
     player,
     leagueId,
     rank,
     eloHistory,
     matchHistory,
     headToHead
-  };
+  });
 }
 
 export async function addUserToLeague(leagueId: string, userId: string): Promise<void> {

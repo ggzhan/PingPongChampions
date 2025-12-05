@@ -15,7 +15,8 @@ const chartConfig = {
 }
 
 export default function EloChart({ data }: { data: EloHistory[] }) {
-  if (data.length === 0) {
+  // A line chart needs at least two points to draw a line.
+  if (data.length < 2) {
     return (
       <div className="flex items-center justify-center h-[250px] text-muted-foreground">
         Not enough match data to display chart.
