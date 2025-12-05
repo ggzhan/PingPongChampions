@@ -1,75 +1,42 @@
 
+"use client";
+
 import { getPlayerStats } from "@/lib/data";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { User as UserIcon, ArrowLeft, TrendingUp, ChevronsRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import RefreshButton from "./components/refresh-button";
 import { Metadata } from "next";
 import EloChart from "./components/elo-chart";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { useEffect, useState } from "react";
+import type { PlayerStats } from "@/lib/types";
 
-export const dynamic = 'force-dynamic';
+export default function PlayerPage() {
+  const params = useParams();
+  const leagueId = params.leagueId as string;
+  const playerId = params.playerId as string;
+  const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-type PlayerPageProps = {
-  params: { leagueId: string, playerId: string };
-};
+  useEffect(() => {
+    async function fetchStats() {
+      if (!leagueId || !playerId) return;
+      const statsData = await getPlayerStats(leagueId, playerId);
+      if (statsData) {
+        setStats(statsData);
+      }
+      setLoading(false);
+    }
+    fetchStats();
+  }, [leagueId, playerId]);
 
-export async function generateMetadata({ params }: PlayerPageProps): Promise<Metadata> {
-  const { leagueId, playerId } = params;
-  const stats = await getPlayerStats(leagueId, playerId);
 
-  if (!stats) {
-    return {
-      title: "Player Not Found",
-    };
+  if (loading) {
+    return <div>Loading player stats...</div>;
   }
-
-  return {
-    title: `${stats.player.name} | Player Stats`,
-  };
-}
-
-const HeadToHeadCard = ({ headToHeadStats }: { headToHeadStats: any[] }) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <ChevronsRight className="h-5 w-5"/>
-          Head-to-Head
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {headToHeadStats.length > 0 ? (
-          <div className="space-y-4">
-            {headToHeadStats.map(stat => (
-              <div key={stat.opponentId} className="flex items-center justify-between">
-                <span className="font-medium">{stat.opponentName}</span>
-                <span className="font-mono text-sm">
-                  {stat.wins}-{stat.losses}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No head-to-head data yet.</p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-export default async function PlayerPage({ params }: PlayerPageProps) {
-  const { leagueId, playerId } = params;
-  const stats = await getPlayerStats(leagueId, playerId);
 
   if (!stats) {
     notFound();
@@ -81,15 +48,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     <div className="space-y-6">
        <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold font-headline">Player Stats</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
-                <Link href={`/leagues/${leagueId}`}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to League
-                </Link>
-            </Button>
-            <RefreshButton />
-          </div>
+          <Button variant="outline" asChild>
+              <Link href={`/leagues/${leagueId}`}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to League
+              </Link>
+          </Button>
        </div>
         
       <Card>
@@ -141,7 +105,30 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           </Card>
         </div>
         <div className="lg:col-span-1">
-          <HeadToHeadCard headToHeadStats={headToHeadStats} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <ChevronsRight className="h-5 w-5"/>
+                  Head-to-Head
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {headToHeadStats.length > 0 ? (
+                  <div className="space-y-4">
+                    {headToHeadStats.map(stat => (
+                      <div key={stat.opponentId} className="flex items-center justify-between">
+                        <span className="font-medium">{stat.opponentName}</span>
+                        <span className="font-mono text-sm">
+                          {stat.wins}-{stat.losses}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No head-to-head data yet.</p>
+                )}
+              </CardContent>
+            </Card>
         </div>
       </div>
 
