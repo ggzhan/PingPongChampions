@@ -41,8 +41,13 @@ const PlayerCardLink = ({ leagueId, player }: { leagueId: string, player: Player
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                 <UserIcon className="w-8 h-8 text-muted-foreground" />
             </div>
-            <span className="font-semibold">{player.name}</span>
-            <span className="text-sm text-muted-foreground">{player.elo} ELO</span>
+            <span className="font-semibold text-center">{player.name}</span>
+            <span className="text-sm text-muted-foreground font-mono">{player.elo} ELO</span>
+            <span className="text-xs text-muted-foreground">
+                <span className="font-semibold text-green-600">{player.wins}W</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold text-red-600">{player.losses}L</span>
+            </span>
         </div>
     );
     
@@ -184,5 +189,3 @@ export default function LeagueTabs({ league }: { league: League }) {
     </Tabs>
   );
 }
-
-    
