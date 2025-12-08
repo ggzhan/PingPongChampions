@@ -28,8 +28,12 @@ service cloud.firestore {
 
     // LEAGUES
     match /leagues/{leagueId} {
-      // Anyone can see public leagues
-      allow read: if resource.data.privacy == 'public' || (isSignedIn() && resource.data.adminIds.has(request.auth.uid)) || (isSignedIn() && resource.data.players.hasAny([request.auth.uid]));
+      // Allow any signed-in user to get a specific league document.
+      // The app's client-side code will handle what to show based on privacy settings.
+      allow get: if isSignedIn();
+
+      // Allow listing of leagues only if they are public.
+      allow list: if resource.data.privacy == 'public';
       
       // Only signed-in, verified users can create a league
       allow create: if isSignedIn() && isVerified();
