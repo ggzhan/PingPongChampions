@@ -41,7 +41,7 @@ export default function LoginForm() {
          toast({
            variant: "destructive",
            title: "Email not verified",
-           description: "Please check your inbox to verify your email. A new verification link has been sent.",
+           description: "Please check your inbox (and spam folder) to verify your email. A new verification link has been sent.",
          });
          return;
       }
@@ -77,7 +77,7 @@ export default function LoginForm() {
                 <MailCheck className="h-4 w-4 !text-blue-500" />
                 <AlertTitle>Verify Your Email</AlertTitle>
                 <AlertDescription>
-                    A verification link has been sent to your email address. Please check your inbox.
+                    A verification link has been sent to your email address. Please check your inbox and spam folder.
                 </AlertDescription>
             </Alert>
         )}

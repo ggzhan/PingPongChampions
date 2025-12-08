@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
         toast({
             title: "Registration Successful",
-            description: "Please check your email to verify your account.",
+            description: "Please check your email (and spam folder) to verify your account.",
         });
 
         router.push("/login?verified=false");
