@@ -46,10 +46,6 @@ export default function Header() {
   const { user } = useUser();
   const pathname = usePathname();
 
-  const navLinks = [
-    { href: '/', label: 'Leagues' },
-  ];
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center px-4">
@@ -57,20 +53,6 @@ export default function Header() {
           <Trophy className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg font-headline">Ping Pong Champions</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "transition-colors hover:text-primary",
-                (pathname === link.href || (link.href === "/" && pathname.startsWith("/leagues"))) ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
         <div className="flex flex-1 items-center justify-end gap-4">
           {isLoggedIn && user ? (
             <DropdownMenu>
