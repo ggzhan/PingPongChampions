@@ -106,7 +106,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                 </div>
             )}
              {sortedMatches.map((match) => (
-                <div key={match.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
+                <div key={match.id} className="flex items-center justify-center p-3 rounded-lg border hover:bg-muted/50">
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col items-end">
                             <div className="flex items-center gap-2">
