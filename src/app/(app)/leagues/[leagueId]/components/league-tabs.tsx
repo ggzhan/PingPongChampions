@@ -8,8 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -99,46 +99,47 @@ export default function LeagueTabs({ league }: { league: League }) {
           <CardHeader>
             <CardTitle>Match History</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-             {sortedMatches.length === 0 && (
+          <CardContent>
+             {sortedMatches.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                     No matches recorded yet.
                 </div>
+            ) : (
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead className="hidden sm:table-cell">Date</TableHead>
+                          <TableHead>Players</TableHead>
+                          <TableHead className="text-right">Result</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedMatches.map((match) => {
+                      const winner = match.winnerId === match.playerAId ? match.playerAName : match.playerBName;
+                      const loser = match.winnerId === match.playerAId ? match.playerBName : match.playerAName;
+                      const winnerScore = match.winnerId === match.playerAId ? match.playerAScore : match.playerBScore;
+                      const loserScore = match.winnerId === match.playerAId ? match.playerBScore : match.playerAScore;
+
+                      return (
+                          <TableRow key={match.id}>
+                              <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Trophy className="w-4 h-4 text-amber-500"/>
+                                  <span className="font-semibold">{winner}</span>
+                                  <span className="text-muted-foreground">vs</span>
+                                  <span>{loser}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">
+                                {winnerScore} - {loserScore}
+                              </TableCell>
+                          </TableRow>
+                      );
+                    })}
+                  </TableBody>
+              </Table>
             )}
-             {sortedMatches.map((match) => (
-                <div key={match.id} className="flex items-center justify-center p-3 rounded-lg border hover:bg-muted/50">
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-end">
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold">{match.playerAName}</span>
-                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                    <UserIcon className="w-4 h-4 text-muted-foreground" />
-                                </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center">
-                                {match.eloChangeA >= 0 ? <ArrowUp className="w-3 h-3 text-green-500"/> : <ArrowDown className="w-3 h-3 text-red-500"/>}
-                                {Math.abs(match.eloChangeA)} ELO
-                            </div>
-                        </div>
-                        <div className="text-center">
-                            <div className="font-bold text-lg">{match.playerAScore} - {match.playerBScore}</div>
-                            <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}</div>
-                        </div>
-                        <div className="flex flex-col items-start">
-                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                    <UserIcon className="w-4 h-4 text-muted-foreground" />
-                                </div>
-                                <span className="font-semibold">{match.playerBName}</span>
-                            </div>
-                             <div className="text-xs text-muted-foreground flex items-center">
-                                {match.eloChangeB >= 0 ? <ArrowUp className="w-3 h-3 text-green-500"/> : <ArrowDown className="w-3 h-3 text-red-500"/>}
-                                {Math.abs(match.eloChangeB)} ELO
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ))}
           </CardContent>
         </Card>
       </TabsContent>
