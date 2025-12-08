@@ -79,7 +79,7 @@ export default function LeaguesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <Button asChild>
+            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
               <Link href="/leagues/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> 
                 <span className="hidden sm:inline">Create League</span>
@@ -93,7 +93,7 @@ export default function LeaguesPage() {
           <h2 className="text-xl font-semibold">No leagues found</h2>
           <p className="text-muted-foreground mt-2">Be the first to create one!</p>
 
-          <Button asChild className="mt-4">
+          <Button asChild className="mt-4 bg-accent hover:bg-accent/90 text-accent-foreground">
             <Link href="/leagues/create">
               <PlusCircle className="mr-2 h-4 w-4" /> Create League
             </Link>
