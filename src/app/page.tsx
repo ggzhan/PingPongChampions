@@ -15,18 +15,16 @@ import { useUser } from "@/context/user-context";
 const LeagueCard = ({ league }: { league: League }) => (
   <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
     <CardHeader>
-      <div className="flex justify-between items-start">
-          <CardTitle className="font-headline pr-4">{league.name}</CardTitle>
+        <CardTitle className="font-headline pr-4">{league.name}</CardTitle>
+      <CardDescription className="flex-grow min-h-[40px] pt-2">{league.description || 'No description available.'}</CardDescription>
+    </CardHeader>
+    <CardContent className="flex-grow">
+       <div className="flex justify-between items-center text-sm text-muted-foreground">
+          <span>{league.activePlayerCount} active players</span>
           <Badge variant="outline" className="capitalize flex gap-1.5 items-center shrink-0">
               {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
               {league.privacy}
           </Badge>
-      </div>
-      <CardDescription className="flex-grow min-h-[40px] pt-2">{league.description || 'No description available.'}</CardDescription>
-    </CardHeader>
-    <CardContent className="flex-grow">
-       <div className="text-sm text-muted-foreground">
-          {league.activePlayerCount} active players
        </div>
     </CardContent>
     <CardFooter>
@@ -118,6 +116,7 @@ export default function LeaguesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
+          <p className="text-muted-foreground">Compete with friends in your own ping pong league.</p>
         </div>
         <div className="flex w-full md:w-auto md:justify-end gap-2">
             <div className="relative flex-grow md:flex-grow-0 md:w-64">
