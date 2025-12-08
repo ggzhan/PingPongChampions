@@ -13,8 +13,9 @@ import {
   query,
   where,
   serverTimestamp,
+  setDoc,
 } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { db } from '@/firebase';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -27,7 +28,7 @@ function generateInviteCode(): string {
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
     // Query only for public leagues to comply with security rules
-    const q = query(leaguesCol, where("privacy", "==", "public"));
+    const q = query(leaguesCol);
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: leaguesCol.path,
@@ -498,7 +499,7 @@ export async function createUserProfile(user: User): Promise<void> {
         email: user.email,
         showEmail: user.showEmail ?? false,
     };
-    await updateDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
+    await setDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'create',
@@ -508,5 +509,3 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
-
-    

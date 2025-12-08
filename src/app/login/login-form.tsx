@@ -11,6 +11,8 @@ import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getUserById, createUserProfile } from "@/lib/data";
+
 
 export default function LoginForm() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function LoginForm() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
       if (!userCredential.user.emailVerified) {
          await sendEmailVerification(userCredential.user);
          toast({
@@ -42,6 +45,20 @@ export default function LoginForm() {
          });
          return;
       }
+      
+      // Ensure user profile exists after login
+      let userProfile = await getUserById(userCredential.user.uid);
+      if (!userProfile) {
+        const newUserProfile = {
+            id: userCredential.user.uid,
+            name: userCredential.user.displayName || 'New User',
+            email: userCredential.user.email!,
+            showEmail: false
+        };
+        await createUserProfile(newUserProfile);
+      }
+
+
       const redirectUrl = searchParams.get('redirect') || '/';
       router.push(redirectUrl);
     } catch (error: any) {
