@@ -18,9 +18,6 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
   const hasPlayed = player.wins > 0 || player.losses > 0;
   const content = (
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-        <UserIcon className="w-4 h-4 text-muted-foreground" />
-      </div>
       <span className="font-medium">{player.name}</span>
     </div>
   );
@@ -108,9 +105,9 @@ export default function LeagueTabs({ league }: { league: League }) {
               <Table>
                   <TableHeader>
                       <TableRow>
-                          <TableHead className="hidden sm:table-cell">Date</TableHead>
+                          <TableHead className="w-1/4">Date</TableHead>
                           <TableHead>Players</TableHead>
-                          <TableHead className="text-right">Result</TableHead>
+                          <TableHead className="text-right w-1/4">Result</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
