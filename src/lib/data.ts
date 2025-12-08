@@ -16,7 +16,7 @@ import {
   setDoc,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db, auth } from '@/firebase';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -28,14 +28,22 @@ function generateInviteCode(): string {
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
-    // Query only for public leagues to comply with security rules
-    const q = query(leaguesCol);
+    const user = auth.currentUser;
+    
+    // If user is not logged in, only fetch public leagues.
+    // Otherwise, fetch all and let security rules handle filtering for private ones.
+    const q = user ? query(leaguesCol) : query(leaguesCol, where("privacy", "==", "public"));
+    
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: leaguesCol.path,
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        // Avoid showing permission errors for non-logged-in users on the homepage.
+        // It's expected they can't see all leagues.
+        if (user) {
+            const permissionError = new FirestorePermissionError({
+                path: leaguesCol.path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
         return null;
     });
 
@@ -376,14 +384,12 @@ export async function updateUserInLeagues(user: User): Promise<void> {
  * @param userId The ID of the user to anonymize and delete.
  */
 export async function deleteUserAccount(userId: string): Promise<void> {
-    // Get all leagues to update them.
     const leagues = await getLeagues();
     const batch = writeBatch(db);
 
     leagues.forEach(league => {
         let leagueWasUpdated = false;
         
-        // Anonymize player in the players list
         const newPlayers = league.players.map(player => {
             if (player.id === userId) {
                 leagueWasUpdated = true;
@@ -398,7 +404,6 @@ export async function deleteUserAccount(userId: string): Promise<void> {
             return player;
         });
 
-        // Anonymize player name in match history
         const newMatches = (league.matches || []).map(match => {
             if (match.playerAId === userId) {
                 match.playerAName = "Deleted User";
@@ -417,18 +422,16 @@ export async function deleteUserAccount(userId: string): Promise<void> {
         }
     });
 
-    // Commit the batch of league updates.
     await batch.commit().catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: "batch write for user deletion cleanup",
             operation: 'update',
         });
         errorEmitter.emit('permission-error', permissionError);
-        // We still want to try deleting the user doc, so we don't re-throw
     });
 
-    // Finally, delete the main user document from the /users collection.
     const userRef = doc(db, 'users', userId);
+    // Delete the main user document.
     await deleteDoc(userRef).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userRef.path,
