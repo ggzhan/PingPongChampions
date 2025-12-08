@@ -358,22 +358,12 @@ export async function updateUserInLeagues(user: User): Promise<void> {
 }
 
 /**
- * Anonymizes a user's data across the app and deletes their user profile document.
- * This does NOT delete their Firebase Auth account.
- * @param userId The ID of the user to anonymize.
+ * Anonymizes a user's data across all leagues and deletes their main user document.
+ * This does NOT delete their Firebase Auth account. That must be done by the user.
+ * @param userId The ID of the user to anonymize and delete.
  */
 export async function deleteUserAccount(userId: string): Promise<void> {
-    const userRef = doc(db, 'users', userId);
-    // Delete the main user document.
-    await deleteDoc(userRef).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // Do not throw here, allow anonymization to continue if possible.
-    });
-
+  // First, anonymize the user's name in all leagues where they played.
   const leagues = await getLeagues();
   const batch = writeBatch(db);
 
@@ -418,6 +408,18 @@ export async function deleteUserAccount(userId: string): Promise<void> {
             operation: 'update',
         });
         errorEmitter.emit('permission-error', permissionError);
+        // We still want to try deleting the user doc, so we don't re-throw
+    });
+
+    // Finally, delete the main user document from the /users collection.
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to delete user document due to permissions.");
     });
 }
 

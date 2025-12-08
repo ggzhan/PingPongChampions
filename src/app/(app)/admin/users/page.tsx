@@ -42,7 +42,9 @@ export default function UserManagementPage() {
     async function fetchUsers() {
       try {
         const allUsers = await getAllUsers();
-        setUsers(allUsers);
+        // Filter out users who have already been "deleted" (anonymized)
+        const activeUsers = allUsers.filter(u => u.name !== "Deleted User");
+        setUsers(activeUsers);
       } catch (error) {
         console.error("Failed to fetch users:", error);
         toast({
@@ -64,19 +66,19 @@ export default function UserManagementPage() {
     }
     
     try {
-      // This function now only deletes Firestore data and anonymizes the user.
+      // This function now anonymizes league data and deletes the user document.
       // It does not and cannot delete the Firebase Auth user.
       await deleteUserAccount(userToDelete.id);
 
       setUsers(users.filter((u) => u.id !== userToDelete.id));
       toast({
-        title: "User Data Anonymized",
-        description: `All data for ${userToDelete.name} has been anonymized. Their auth account still exists.`,
+        title: "User Deleted",
+        description: `All data for ${userToDelete.name} has been anonymized and they have been removed.`,
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error Deleting User Data",
+        title: "Error Deleting User",
         description: error.message,
       });
     }
@@ -124,13 +126,13 @@ export default function UserManagementPage() {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently anonymize the user '{u.name}' and their associated data. It will not delete their authentication record, and they will still be able to log in.
+                                    This action cannot be undone. This will permanently anonymize the user '{u.name}' and remove them from the system. It will not delete their authentication record, and they will still be able to log in.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => handleDeleteUser(u)}>
-                                    Anonymize User Data
+                                    Delete User
                                 </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
