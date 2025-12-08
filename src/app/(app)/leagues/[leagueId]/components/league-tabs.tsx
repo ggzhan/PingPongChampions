@@ -18,6 +18,20 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
   const content = (
     <div className="flex items-center gap-3">
       <span className="font-bold">{player.name}</span>
+      {player.showEmail && player.email && (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
+                        <Mail className="h-4 w-4" />
+                    </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{player.email}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
   );
 
