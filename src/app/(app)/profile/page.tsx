@@ -38,6 +38,7 @@ import { getLeagues, deleteUserAccount } from "@/lib/data";
 import type { League } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { updatePassword } from "firebase/auth";
 
 
 const accountFormSchema = z.object({
@@ -51,9 +52,7 @@ const accountFormSchema = z.object({
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 
-// This can be used in a real app to mock a password update
 const passwordFormSchema = z.object({
-    currentPassword: z.string().min(1, "Current password is required"),
     newPassword: z.string().min(6, "New password must be at least 6 characters"),
     confirmPassword: z.string()
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -67,7 +66,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 export default function ProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { user, updateUser, logout } = useUser();
+    const { user, authUser, updateUser, logout } = useUser();
     const [userLeagues, setUserLeagues] = useState<any[]>([]);
 
     useEffect(() => {
@@ -115,7 +114,6 @@ export default function ProfilePage() {
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordFormSchema),
         defaultValues: {
-            currentPassword: "",
             newPassword: "",
             confirmPassword: ""
         }
@@ -131,18 +129,33 @@ export default function ProfilePage() {
         }
     }
 
-    function onPasswordSubmit(data: PasswordFormValues) {
-        console.log("Password data submitted:", data);
-        toast({
-            title: "Password Updated",
-            description: "Your password has been changed successfully.",
-        });
-        passwordForm.reset();
+    async function onPasswordSubmit(data: PasswordFormValues) {
+        if (!authUser) {
+            toast({ variant: "destructive", title: "Not authenticated" });
+            return;
+        }
+        try {
+            await updatePassword(authUser, data.newPassword);
+            toast({
+                title: "Password Updated",
+                description: "Your password has been changed successfully.",
+            });
+            passwordForm.reset();
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error updating password",
+                description: error.message,
+            });
+        }
     }
     
     async function handleAccountDelete() {
         if (user) {
             await deleteUserAccount(user.id);
+            if (authUser) {
+                await authUser.delete();
+            }
             logout();
             toast({
                 title: "Account Deleted",
@@ -221,7 +234,7 @@ export default function ProfilePage() {
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="your@email.com" {...field} />
+                                            <Input placeholder="your@email.com" {...field} disabled />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -261,19 +274,6 @@ export default function ProfilePage() {
                         <h3 className="text-lg font-semibold">Change Password</h3>
                         <Form {...passwordForm}>
                             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="mt-4 space-y-4">
-                                <FormField
-                                    control={passwordForm.control}
-                                    name="currentPassword"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Current Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                    />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField
                                         control={passwordForm.control}

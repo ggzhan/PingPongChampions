@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trophy, User, LogOut, LogIn, UserPlus, KeyRound } from 'lucide-react';
+import { Trophy, User, LogOut, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,39 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { useUser } from '@/context/user-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-// Mock auth state
-const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  useEffect(() => {
-    // In a real app, you'd check a token or session here
-    const loggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-  }, []);
-
-  const login = () => {
-    localStorage.setItem('isLoggedIn', 'true');
-    setIsLoggedIn(true);
-  }
-
-  const logout = () => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
-  }
-
-  return { isLoggedIn, login, logout };
-};
-
-
 export default function Header() {
-  const { isLoggedIn } = useAuth();
-  const { user } = useUser();
-  const pathname = usePathname();
+  const { user, logout } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
@@ -58,7 +29,7 @@ export default function Header() {
           </div>
         </Link>
         <div className="flex items-center justify-end gap-2 mt-4 sm:mt-0 flex-wrap">
-          {isLoggedIn && user ? (
+          {user ? (
             <>
             <ThemeToggle />
             <DropdownMenu>
@@ -84,12 +55,7 @@ export default function Header() {
                   <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('isLoggedIn');
-                    window.location.href = '/';
-                  }
-                }}>
+                <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

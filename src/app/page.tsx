@@ -56,8 +56,6 @@ export default function LeaguesPage() {
   useEffect(() => {
     async function fetchLeagues() {
       const allLeagues = await getLeagues();
-      // Sort leagues alphabetically by name
-      allLeagues.sort((a, b) => a.name.localeCompare(b.name));
       setLeagues(allLeagues);
       setLoading(false);
     }
@@ -127,12 +125,14 @@ export default function LeaguesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
-              <Link href="/leagues/create">
-                <PlusCircle className="mr-2 h-4 w-4" /> 
-                <span>Create League</span>
-              </Link>
-            </Button>
+            {user && (
+                <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
+                <Link href="/leagues/create">
+                    <PlusCircle className="mr-2 h-4 w-4" /> 
+                    <span>Create League</span>
+                </Link>
+                </Button>
+            )}
           </div>
       </div>
       
@@ -140,12 +140,13 @@ export default function LeaguesPage() {
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <h2 className="text-xl font-semibold">No leagues found</h2>
           <p className="text-muted-foreground mt-2">Be the first to create one!</p>
-
-          <Button asChild className="mt-4 bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Link href="/leagues/create">
-              <PlusCircle className="mr-2 h-4 w-4" /> Create League
-            </Link>
-          </Button>
+            {user && (
+                <Button asChild className="mt-4 bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Link href="/leagues/create">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Create League
+                    </Link>
+                </Button>
+            )}
         </div>
       ) : myLeagues.length === 0 && otherLeagues.length === 0 ? (
          <div className="text-center py-12 border-2 border-dashed rounded-lg">

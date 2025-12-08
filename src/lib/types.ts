@@ -1,4 +1,6 @@
 
+import type { Timestamp } from 'firebase/firestore';
+
 export type User = {
   id: string;
   name: string;
@@ -35,11 +37,12 @@ export type League = {
   description: string;
   privacy: 'public' | 'private';
   leaderboardVisible?: boolean;
-  inviteCode?: string;
+  inviteCode?: string | null;
   adminIds: string[];
   players: Player[];
   matches: Match[];
   activePlayerCount?: number;
+  createdAt: Timestamp | string;
 };
 
 export type EloHistory = {

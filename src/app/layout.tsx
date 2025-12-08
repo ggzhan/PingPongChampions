@@ -9,6 +9,8 @@ import Footer from '@/components/footer';
 import { usePathname } from 'next/navigation';
 import { AppProvider } from '@/context/app-context';
 import { ThemeProvider } from 'next-themes';
+import { FirebaseProvider } from '@/firebase/provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export default function RootLayout({
   children,
@@ -36,16 +38,19 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AppProvider>
-            <UserProvider>
-              <div className="flex flex-col min-h-screen">
-                {!noHeaderFooter && <Header />}
-                <main className="flex-grow">
-                  {noHeaderFooter ? children : <div className="container mx-auto px-4 py-8">{children}</div>}
-                </main>
-                {!noHeaderFooter && <Footer />}
-              </div>
-              <Toaster />
-            </UserProvider>
+            <FirebaseProvider>
+                <UserProvider>
+                  <FirebaseErrorListener />
+                  <div className="flex flex-col min-h-screen">
+                    {!noHeaderFooter && <Header />}
+                    <main className="flex-grow">
+                      {noHeaderFooter ? children : <div className="container mx-auto px-4 py-8">{children}</div>}
+                    </main>
+                    {!noHeaderFooter && <Footer />}
+                  </div>
+                  <Toaster />
+                </UserProvider>
+            </FirebaseProvider>
           </AppProvider>
         </ThemeProvider>
       </body>

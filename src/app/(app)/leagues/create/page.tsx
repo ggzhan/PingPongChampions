@@ -77,6 +77,7 @@ export default function CreateLeaguePage() {
           privacy: values.privacy,
           leaderboardVisible: values.leaderboardVisible,
           adminIds: [user.id],
+          creator: user,
       });
       toast({
         title: "League Created!",
@@ -214,5 +215,3 @@ export default function CreateLeaguePage() {
     </div>
   );
 }
-
-    

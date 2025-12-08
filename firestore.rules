@@ -1,0 +1,44 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isVerified() {
+      return request.auth.token.email_verified;
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      // Disallow deletes for now to preserve user history
+      allow delete: if false;
+    }
+
+    // LEAGUES
+    match /leagues/{leagueId} {
+      // Anyone can see public leagues
+      allow read: if resource.data.privacy == 'public' || (isSignedIn() && resource.data.adminIds.has(request.auth.uid)) || (isSignedIn() && resource.data.players.hasAny([request.auth.uid]));
+      
+      // Only signed-in, verified users can create a league
+      allow create: if isSignedIn() && isVerified();
+
+      // Only league admins can update league settings
+      allow update: if isSignedIn() && resource.data.adminIds.has(request.auth.uid);
+
+      // Only league admins can delete a league
+      allow delete: if isSignedIn() && resource.data.adminIds.has(request.auth.uid);
+    }
+  }
+}

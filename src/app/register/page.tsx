@@ -14,16 +14,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { useFirebase } from "@/firebase";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { createUserProfile } from "@/lib/data";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { auth } = useFirebase();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
 
-  const handleRegister = (event: React.FormEvent) => {
+  const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Mock registration
-    if (typeof window !== "undefined") {
-      localStorage.setItem("isLoggedIn", "true");
-      router.push("/");
+    if (!auth) return;
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await updateProfile(user, { displayName: username });
+        await sendEmailVerification(user);
+
+        await createUserProfile({
+            id: user.uid,
+            name: username,
+            email: user.email!,
+            showEmail: false,
+        });
+
+        toast({
+            title: "Registration Successful",
+            description: "Please check your email to verify your account.",
+        });
+
+        router.push("/login?verified=false");
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Registration Failed",
+            description: error.message || "An unexpected error occurred.",
+        });
     }
   };
 
@@ -45,7 +79,13 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} className="grid gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="username">Username</Label>
-                <Input id="username" placeholder="Your pseudonym" required />
+                <Input 
+                    id="username" 
+                    placeholder="Your pseudonym" 
+                    required 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
               </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
@@ -54,11 +94,19 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="m@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" />
+              <Input 
+                id="password" 
+                type="password" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <Button type="submit" className="w-full">
               Create an account

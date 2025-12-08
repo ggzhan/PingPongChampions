@@ -1,193 +1,175 @@
 
-// In a real application, this would be a database.
-// For this example, we're using an in-memory store.
-// We attach it to the global object to prevent it from being cleared on hot-reloads.
+'use client';
+
+import {
+  collection,
+  doc,
+  addDoc,
+  getDocs,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  query,
+  where,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '@/firebase/config';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
-
-declare global {
-  var dataStore: {
-    users: User[];
-    leagues: League[];
-  }
-}
-
-const g = globalThis as unknown as { dataStore: { users: User[], leagues: League[] } };
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 function generateInviteCode(): string {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-if (!g.dataStore) {
-  const initialUsers: User[] = [
-    { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: true },
-    { id: 'user-2', name: 'Bob', email: 'bob@example.com', showEmail: false },
-    { id: 'user-3', name: 'Charlie', email: 'charlie@example.com', showEmail: false },
-    { id: 'user-4', name: 'Diana', email: 'diana@example.com', showEmail: false },
-    { id: 'user-5', name: 'Eve', email: 'eve@example.com', showEmail: false },
-  ];
-
-  const initialPlayers: Player[] = initialUsers.slice(0, 4).map(user => ({
-    ...user,
-    elo: 1000,
-    wins: 0,
-    losses: 0,
-    status: 'active'
-  }));
-
-  const initialMatches: Match[] = [
-    {
-      id: 'match-1',
-      leagueId: 'league-1',
-      playerAId: 'user-1',
-      playerBId: 'user-2',
-      playerAName: 'AlpacaRacer',
-      playerBName: 'Bob',
-      playerAScore: 3,
-      playerBScore: 1,
-      winnerId: 'user-1',
-      eloChangeA: 16,
-      eloChangeB: -16,
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'match-2',
-      leagueId: 'league-1',
-      playerAId: 'user-3',
-      playerBId: 'user-4',
-      playerAName: 'Charlie',
-      playerBName: 'Diana',
-      playerAScore: 2,
-      playerBScore: 3,
-      winnerId: 'user-4',
-      eloChangeA: -16,
-      eloChangeB: 16,
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
-
-  const initialLeagues: League[] = [
-    {
-      id: 'league-1',
-      name: 'Office Champions League',
-      description: 'The official ping pong league for the office. Settle your disputes over the table.',
-      privacy: 'public',
-      adminIds: ['user-1'],
-      players: [
-        { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: true, elo: 1016, wins: 1, losses: 0, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-        { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-        { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-        { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-      ],
-      matches: initialMatches,
-    },
-    {
-      id: 'league-2',
-      name: 'Weekend Warriors',
-      description: 'A casual league for weekend games.',
-      privacy: 'private',
-      leaderboardVisible: true,
-      inviteCode: generateInviteCode(),
-      adminIds: ['user-1', 'user-3'],
-      players: initialUsers.slice(2, 5).map(user => ({...user, elo: 1000, wins: 0, losses: 0, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()})),
-      matches: [],
-    }
-  ];
-
-  g.dataStore = {
-    users: initialUsers,
-    leagues: initialLeagues
-  };
-}
-
-
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
-  // Create a deep copy to avoid mutations affecting the original data store
-  const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
-  const result = leagues.map(league => ({
-    ...league,
-    activePlayerCount: league.players.filter(p => p.status === 'active').length
-  }));
+    const leaguesCol = collection(db, 'leagues');
+    const leagueSnapshot = await getDocs(leaguesCol).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leaguesCol.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        return null;
+    });
 
-  // Sort by name
-  result.sort((a,b) => a.name.localeCompare(b.name));
-  return Promise.resolve(result);
+    if (!leagueSnapshot) return [];
+
+    const leagues = leagueSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as League));
+    
+    const result = leagues.map(league => ({
+        ...league,
+        activePlayerCount: league.players.filter(p => p.status === 'active').length
+    }));
+
+    result.sort((a,b) => a.name.localeCompare(b.name));
+    return result;
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
-  const league = g.dataStore.leagues.find(l => l.id === id);
-  return Promise.resolve(league ? JSON.parse(JSON.stringify(league)) : undefined);
+    const leagueDocRef = doc(db, 'leagues', id);
+    const leagueDoc = await getDoc(leagueDocRef).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        return null;
+    });
+
+    if (!leagueDoc || !leagueDoc.exists()) {
+        return undefined;
+    }
+    return { id: leagueDoc.id, ...leagueDoc.data() } as League;
 }
 
-export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'>): Promise<League> {
-  const user = g.dataStore.users.find(u => u.id === leagueData.adminIds[0]);
-  if (!user) {
-    throw new Error("Admin user not found");
-  }
-  
-  const newPlayer: Player = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    showEmail: !!user.showEmail,
-    elo: 1000,
-    wins: 0,
-    losses: 0,
-    status: 'active',
-    createdAt: new Date().toISOString()
-  };
+export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'> & { creator: User }): Promise<League> {
+    const { creator, ...restOfLeagueData } = leagueData;
+    
+    const newPlayer: Player = {
+        id: creator.id,
+        name: creator.name,
+        email: creator.email,
+        showEmail: !!creator.showEmail,
+        elo: 1000,
+        wins: 0,
+        losses: 0,
+        status: 'active',
+        createdAt: new Date().toISOString()
+    };
 
-  const newLeague: League = {
-    id: `league-${Date.now()}`,
-    ...leagueData,
-    inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : undefined,
-    players: [newPlayer],
-    matches: [],
-  };
-  g.dataStore.leagues.push(newLeague);
-  return Promise.resolve(JSON.parse(JSON.stringify(newLeague)));
+    const newLeagueData = {
+        ...restOfLeagueData,
+        inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : null,
+        players: [newPlayer],
+        matches: [],
+        createdAt: serverTimestamp(),
+    };
+
+    const leaguesCol = collection(db, 'leagues');
+    const docRef = await addDoc(leaguesCol, newLeagueData)
+    .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leaguesCol.path,
+            operation: 'create',
+            requestResourceData: newLeagueData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        return null;
+    });
+
+    if (!docRef) {
+        throw new Error("Failed to create league due to permissions.");
+    }
+
+    return {
+        id: docRef.id,
+        ...newLeagueData,
+        createdAt: new Date().toISOString(),
+    } as League;
 }
 
 export async function updateLeague(id: string, updates: Partial<Pick<League, 'name' | 'description' | 'privacy' | 'leaderboardVisible'>>): Promise<League> {
-  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === id);
-  if (leagueIndex === -1) {
-    throw new Error("League not found");
-  }
+    const leagueDocRef = doc(db, 'leagues', id);
 
-  const league = g.dataStore.leagues[leagueIndex];
-  league.name = updates.name ?? league.name;
-  league.description = updates.description ?? league.description;
-  league.leaderboardVisible = updates.leaderboardVisible ?? league.leaderboardVisible;
-  
-  if (updates.privacy && updates.privacy !== league.privacy) {
-    league.privacy = updates.privacy;
-    if (league.privacy === 'private' && !league.inviteCode) {
-        league.inviteCode = generateInviteCode();
+    const leagueToUpdate = { ...updates };
+
+    if (updates.privacy && updates.privacy === 'private') {
+        const currentLeague = await getLeagueById(id);
+        if (currentLeague && !currentLeague.inviteCode) {
+            (leagueToUpdate as any).inviteCode = generateInviteCode();
+        }
     }
-  }
 
-  g.dataStore.leagues[leagueIndex] = league;
-  return Promise.resolve(JSON.parse(JSON.stringify(g.dataStore.leagues[leagueIndex])));
+    await updateDoc(leagueDocRef, leagueToUpdate).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to update league due to permissions.");
+    });
+    
+    const updatedLeague = await getLeagueById(id);
+    if (!updatedLeague) throw new Error("Could not fetch updated league");
+
+    return updatedLeague;
 }
 
 export async function regenerateInviteCode(leagueId: string): Promise<string | undefined> {
-    const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
-    if (leagueIndex === -1) throw new Error("League not found");
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    const league = await getLeagueById(leagueId);
+    if (!league) throw new Error("League not found");
 
-    const league = g.dataStore.leagues[leagueIndex];
     if (league.privacy !== 'private') return undefined;
 
-    league.inviteCode = generateInviteCode();
-    g.dataStore.leagues[leagueIndex] = league;
-    return Promise.resolve(league.inviteCode);
+    const newCode = generateInviteCode();
+    await updateDoc(leagueDocRef, { inviteCode: newCode }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { inviteCode: newCode },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to regenerate code due to permissions.");
+    });
+
+    return newCode;
 }
 
 export async function deleteLeague(leagueId: string): Promise<void> {
-  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
-  if (leagueIndex > -1) {
-    g.dataStore.leagues.splice(leagueIndex, 1);
-  }
-  return Promise.resolve();
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    await deleteDoc(leagueDocRef).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to delete league due to permissions.");
+    });
 }
 
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
@@ -241,21 +223,22 @@ export async function getPlayerStats(leagueId: string, playerId: string): Promis
     player: JSON.parse(JSON.stringify(player)),
     leagueId,
     rank,
-    matchHistory: matchHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), // sort descending for display
+    matchHistory: matchHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     eloHistory,
     headToHeadStats: Object.entries(headToHead).map(([opponentId, stats]) => ({ opponentId, ...stats })),
   };
 }
 
 
-export async function addUserToLeague(leagueId: string, userId: string): Promise<void> {
-  const league = g.dataStore.leagues.find(l => l.id === leagueId);
-  const user = g.dataStore.users.find(u => u.id === userId);
+export async function addUserToLeague(leagueId: string, user: User): Promise<void> {
+  const league = await getLeagueById(leagueId);
 
   if (league && user) {
-    const existingPlayer = league.players.find(p => p.id === userId);
+    const existingPlayer = league.players.find(p => p.id === user.id);
+    let newPlayers;
+
     if (existingPlayer) {
-      existingPlayer.status = 'active';
+      newPlayers = league.players.map(p => p.id === user.id ? { ...p, status: 'active' } : p);
     } else {
        const newPlayer: Player = {
         ...user,
@@ -266,95 +249,153 @@ export async function addUserToLeague(leagueId: string, userId: string): Promise
         showEmail: !!user.showEmail,
         createdAt: new Date().toISOString(),
       };
-      if (!league.players) league.players = [];
-      league.players.push(newPlayer);
+      newPlayers = [...(league.players || []), newPlayer];
     }
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { players: newPlayers }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to add user due to permissions.");
+    });
   }
-  return Promise.resolve();
 }
 
-export async function joinLeagueByInviteCode(inviteCode: string, userId: string, leagueId: string): Promise<League> {
-    const league = g.dataStore.leagues.find(l => l.id === leagueId && l.inviteCode === inviteCode && l.privacy === 'private');
-    if (!league) {
+export async function joinLeagueByInviteCode(inviteCode: string, user: User, leagueId: string): Promise<League> {
+    const q = query(collection(db, "leagues"), where("inviteCode", "==", inviteCode), where("id", "==", leagueId));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
         throw new Error("Invalid invite code or league does not match.");
     }
-    await addUserToLeague(league.id, userId);
-    return Promise.resolve(JSON.parse(JSON.stringify(league)));
+    
+    const leagueDoc = querySnapshot.docs[0];
+    const league = { id: leagueDoc.id, ...leagueDoc.data() } as League;
+
+    await addUserToLeague(league.id, user);
+    return league;
 }
 
 
 export async function removePlayerFromLeague(leagueId: string, userId: string): Promise<void> {
-  const league = g.dataStore.leagues.find(l => l.id === leagueId);
+  const league = await getLeagueById(leagueId);
   if (league) {
-    const player = league.players.find(p => p.id === userId);
-    if (player) {
-      player.status = 'inactive';
-    }
+    const newPlayers = league.players.map(p => p.id === userId ? { ...p, status: 'inactive' } : p);
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { players: newPlayers }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to remove player due to permissions.");
+    });
   }
-  return Promise.resolve();
 }
 
 export async function updateUserInLeagues(user: User): Promise<void> {
-    g.dataStore.users = g.dataStore.users.map(u => u.id === user.id ? {...u, ...user} : u);
-    
-    g.dataStore.leagues = g.dataStore.leagues.map(league => {
-        return {
-            ...league,
-            players: league.players.map(player => {
-                if (player.id === user.id) {
-                    return { ...player, name: user.name, email: user.email, showEmail: user.showEmail };
-                }
-                return player;
-            }),
-            matches: (league.matches || []).map(match => {
-                if (match.playerAId === user.id) {
-                    match.playerAName = user.name;
-                }
-                if (match.playerBId === user.id) {
-                    match.playerBName = user.name;
-                }
-                return match;
-            })
+    const userDocRef = doc(db, 'users', user.id);
+    await updateDoc(userDocRef, { ...user }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: user
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+
+    const leagues = await getLeagues();
+    const batch = writeBatch(db);
+
+    leagues.forEach(league => {
+        let leagueWasUpdated = false;
+        const newPlayers = league.players.map(player => {
+            if (player.id === user.id) {
+                leagueWasUpdated = true;
+                return { ...player, name: user.name, email: user.email, showEmail: user.showEmail };
+            }
+            return player;
+        });
+        const newMatches = (league.matches || []).map(match => {
+            if (match.playerAId === user.id) {
+                leagueWasUpdated = true;
+                match.playerAName = user.name;
+            }
+            if (match.playerBId === user.id) {
+                leagueWasUpdated = true;
+                match.playerBName = user.name;
+            }
+            return match;
+        });
+
+        if(leagueWasUpdated) {
+            const leagueRef = doc(db, 'leagues', league.id);
+            batch.update(leagueRef, { players: newPlayers, matches: newMatches });
         }
     });
 
-    return Promise.resolve();
+    await batch.commit().catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: "batch write",
+            operation: 'update',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
 }
 
 export async function deleteUserAccount(userId: string): Promise<void> {
-  // Anonymize user in the main user list
-  const user = g.dataStore.users.find(u => u.id === userId);
-  if (user) {
-    user.name = "Deleted User";
-    user.email = "";
-    user.showEmail = false;
-  }
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
 
-  // Anonymize user and set to inactive across all leagues
-  g.dataStore.leagues.forEach(league => {
+  const leagues = await getLeagues();
+  const batch = writeBatch(db);
+
+  leagues.forEach(league => {
+    let leagueWasUpdated = false;
     const player = league.players.find(p => p.id === userId);
     if (player) {
       player.name = "Deleted User";
       player.email = "";
       player.showEmail = false;
       player.status = 'inactive';
+      leagueWasUpdated = true;
     }
-    league.matches.forEach(match => {
+    (league.matches || []).forEach(match => {
       if (match.playerAId === userId) {
         match.playerAName = "Deleted User";
+        leagueWasUpdated = true;
       }
       if (match.playerBId === userId) {
         match.playerBName = "Deleted User";
+        leagueWasUpdated = true;
       }
     });
+     if(leagueWasUpdated) {
+        const leagueRef = doc(db, 'leagues', league.id);
+        batch.update(leagueRef, { players: league.players, matches: league.matches });
+    }
   });
 
-  return Promise.resolve();
+  await batch.commit().catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: "batch write",
+            operation: 'update',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
 }
 
 export function calculateEloChange(playerElo: number, opponentElo: number, playerMatchesPlayed: number, result: 'win' | 'loss'): number {
-  // K-factor is higher for new players to allow their ELO to change more quickly.
-  // It stabilizes as they play more matches.
   const K = playerMatchesPlayed < 30 ? 40 : 20;
   const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
   const actualScore = result === 'win' ? 1 : 0;
@@ -371,14 +412,15 @@ export async function recordMatch(
     winnerId: string;
   }
 ): Promise<Match> {
-  const leagueIndex = g.dataStore.leagues.findIndex(l => l.id === leagueId);
-  if (leagueIndex === -1) {
+  const league = await getLeagueById(leagueId);
+  if (!league) {
     throw new Error('League not found');
   }
 
-  const league = g.dataStore.leagues[leagueIndex];
-  const playerA = league.players.find(p => p.id === formData.playerAId);
-  const playerB = league.players.find(p => p.id === formData.playerBId);
+  const playerAIndex = league.players.findIndex(p => p.id === formData.playerAId);
+  const playerBIndex = league.players.findIndex(p => p.id === formData.playerBId);
+  const playerA = league.players[playerAIndex];
+  const playerB = league.players[playerBIndex];
 
   if (!playerA || !playerB) {
     throw new Error('One or both players not found in the league');
@@ -398,6 +440,10 @@ export async function recordMatch(
   playerB.elo += eloChangeB;
   playerB.wins += formData.winnerId === playerB.id ? 1 : 0;
   playerB.losses += formData.winnerId === playerB.id ? 0 : 1;
+  
+  const newPlayers = [...league.players];
+  newPlayers[playerAIndex] = playerA;
+  newPlayers[playerBIndex] = playerB;
 
   const newMatch: Match = {
     id: `match-${Date.now()}`,
@@ -410,12 +456,47 @@ export async function recordMatch(
     createdAt: new Date().toISOString(),
   };
 
-  if (!league.matches) {
-    league.matches = [];
-  }
-  league.matches.push(newMatch);
+  const newMatches = [...(league.matches || []), newMatch];
+  
+  const leagueDocRef = doc(db, 'leagues', leagueId);
+  await updateDoc(leagueDocRef, { players: newPlayers, matches: newMatches }).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+        path: leagueDocRef.path,
+        operation: 'update',
+        requestResourceData: { players: newPlayers, matches: newMatches }
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw new Error("Failed to record match due to permissions.");
+  });
 
-  g.dataStore.leagues[leagueIndex] = league;
 
-  return Promise.resolve(JSON.parse(JSON.stringify(newMatch)));
+  return newMatch;
+}
+
+export async function getUserById(userId: string): Promise<User | null> {
+    const userDocRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+        return { id: userDoc.id, ...userDoc.data() } as User;
+    }
+    return null;
+}
+
+export async function createUserProfile(user: User): Promise<void> {
+    const userDocRef = doc(db, 'users', user.id);
+    const data = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        showEmail: user.showEmail ?? false,
+    };
+    await updateDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: data
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to create user profile due to permissions.");
+    });
 }

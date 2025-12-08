@@ -71,7 +71,7 @@ export default function LeaguePage() {
 
   const handleJoinLeague = async () => {
     if (user && !isMember && league.privacy === 'public') {
-      await addUserToLeague(league.id, user.id);
+      await addUserToLeague(league.id, user);
       fetchLeague();
       toast({
         title: "League Joined!",

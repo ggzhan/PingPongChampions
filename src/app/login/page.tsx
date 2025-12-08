@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,26 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import LoginForm from './login-form';
 
 export default function LoginPage() {
-  const router = useRouter();
-
-  const handleLogin = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Mock login
-    if (typeof window !== "undefined") {
-      localStorage.setItem("isLoggedIn", "true");
-      router.push("/");
-    }
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="mx-auto max-w-sm w-full relative">
+       <Card className="mx-auto max-w-sm w-full relative">
         <Link href="/" aria-label="Close">
             <Button variant="ghost" size="icon" className="absolute top-2 right-2">
                 <X className="h-5 w-5" />
@@ -42,29 +30,9 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link href="#" className="ml-auto inline-block text-sm underline">
-                  Forgot your password?
-                </Link>
-              </div>
-              <Input id="password" type="password" required />
-            </div>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-          </form>
+          <Suspense fallback={<div>Loading...</div>}>
+            <LoginForm />
+          </Suspense>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="underline">

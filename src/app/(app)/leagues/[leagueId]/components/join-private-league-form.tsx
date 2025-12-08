@@ -49,7 +49,7 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
     }
     
     try {
-      const joinedLeague = await joinLeagueByInviteCode(values.inviteCode.toUpperCase(), user.id, leagueId);
+      const joinedLeague = await joinLeagueByInviteCode(values.inviteCode.toUpperCase(), user, leagueId);
       toast({
         title: "League Joined!",
         description: `You are now a member of "${joinedLeague.name}".`,
