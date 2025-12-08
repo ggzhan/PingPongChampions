@@ -19,21 +19,21 @@ import { calculateEloChange } from '@/lib/data';
 const PlayerLink = ({ player }: { player: Player }) => {
   return (
     <div className="flex items-center gap-3">
-        <span className="font-bold">{player.name}</span>
-        {player.showEmail && player.email && (
+      <span className="font-bold">{player.name}</span>
+      {player.showEmail && player.email && (
         <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
-                        <Mail className="h-4 w-4" />
-                    </a>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{player.email}</p>
-                </TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
+                    <Mail className="h-4 w-4" />
+                </a>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{player.email}</p>
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
-        )}
+      )}
     </div>
   );
 };
@@ -96,9 +96,25 @@ export default function LeagueTabs({ league }: { league: League }) {
                      <TableRow key={player.id} className={player.id === currentUserPlayer?.id ? 'bg-muted/50 hover:bg-muted' : ''}>
                         <TableCell className="font-medium text-center">{index + 1}</TableCell>
                         <TableCell>
-                          <Link href={`/leagues/${league.id}/players/${player.id}`} className="hover:underline">
-                            <PlayerLink player={player} />
-                          </Link>
+                          <div className="flex items-center gap-3">
+                            <Link href={`/leagues/${league.id}/players/${player.id}`} className="font-bold hover:underline">
+                              {player.name}
+                            </Link>
+                            {player.showEmail && player.email && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                      <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
+                                          <Mail className="h-4 w-4" />
+                                      </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{player.email}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-mono">{player.elo}</TableCell>
                         <TableCell className="text-center">
