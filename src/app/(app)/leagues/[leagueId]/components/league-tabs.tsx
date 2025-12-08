@@ -15,10 +15,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-  const content = (
+  return (
     <div className="flex items-center gap-3">
-      <span className="font-bold">{player.name}</span>
-      {player.showEmail && player.email && (
+        <Link href={`/leagues/${leagueId}/players/${player.id}`} className="font-bold hover:underline">
+          {player.name}
+        </Link>
+        {player.showEmail && player.email && (
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -31,14 +33,8 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
-      )}
+        )}
     </div>
-  );
-
-  return (
-    <Link href={`/leagues/${leagueId}/players/${player.id}`} className="hover:underline">
-      {content}
-    </Link>
   );
 };
 
