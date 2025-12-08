@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -57,8 +58,12 @@ export function PlayerCombobox({ players, value, onChange, disabledPlayerId, pla
                   key={player.id}
                   value={player.name}
                   disabled={player.id === disabledPlayerId}
-                  onSelect={() => {
-                    onChange(player.id)
+                  onSelect={(currentValue) => {
+                    // Find player by name to get id
+                    const selectedPlayer = players.find(p => p.name.toLowerCase() === currentValue.toLowerCase());
+                    if (selectedPlayer) {
+                      onChange(selectedPlayer.id)
+                    }
                     setOpen(false)
                   }}
                 >

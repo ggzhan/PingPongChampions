@@ -13,38 +13,39 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getLeagueById, recordMatch } from "@/lib/data";
 import { useRouter, notFound, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { Player, League } from "@/lib/types";
-import { ArrowLeft, User as UserIcon, Users } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import Link from 'next/link';
 import { useApp } from "@/context/app-context";
 import { PlayerCombobox } from "./components/player-combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 const formSchema = z.object({
   playerAId: z.string().min(1, "Player A is required."),
   playerBId: z.string().min(1, "Player B is required."),
-  playerAScore: z.coerce.number().min(0, "Score must be a positive number."),
-  playerBScore: z.coerce.number().min(0, "Score must be a positive number."),
-  winnerId: z.string().min(1, "A winner must be selected."),
+  playerAScore: z.coerce.number({required_error: "Score is required."}).min(0).max(3),
+  playerBScore: z.coerce.number({required_error: "Score is required."}).min(0).max(3),
 }).refine(data => data.playerAId !== data.playerBId, {
     message: "Players cannot play against themselves.",
     path: ["playerBId"],
 }).refine(data => data.playerAScore !== data.playerBScore, {
     message: "Scores cannot be tied. A winner must be decided.",
     path: ["playerBScore"],
-}).refine(data => {
-    if (data.winnerId === data.playerAId && data.playerAScore < data.playerBScore) return false;
-    if (data.winnerId === data.playerBId && data.playerBScore < data.playerAScore) return false;
-    return true;
-}, {
-    message: "Winner's score must be higher than the opponent's.",
-    path: ["winnerId"],
+}).refine(data => (data.playerAScore === 3 && data.playerBScore < 3) || (data.playerBScore === 3 && data.playerAScore < 3), {
+    message: "One player must score exactly 3 to win.",
+    path: ["playerAScore"],
 });
 
 
@@ -77,9 +78,6 @@ export default function RecordMatchPage() {
     defaultValues: {
       playerAId: "",
       playerBId: "",
-      playerAScore: '' as any,
-      playerBScore: '' as any,
-      winnerId: "",
     }
   });
 
@@ -87,15 +85,15 @@ export default function RecordMatchPage() {
   const playerBId = form.watch("playerBId");
 
   const activePlayers = league?.players.filter(p => p.status === 'active') || [];
-  const playerA = activePlayers.find(p => p.id === playerAId);
-  const playerB = activePlayers.find(p => p.id === playerBId);
   const canRecordMatch = activePlayers.length >= 2;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!league || !canRecordMatch) return;
 
+    const winnerId = values.playerAScore > values.playerBScore ? values.playerAId : values.playerBId;
+
     try {
-      await recordMatch(league.id, values);
+      await recordMatch(league.id, {...values, winnerId});
       toast({
         title: "Match Recorded!",
         description: "The results have been saved and ELOs updated.",
@@ -114,6 +112,8 @@ export default function RecordMatchPage() {
   if (loading) return <div>Loading...</div>
   if (!league) notFound();
 
+  const scoreOptions = ["0", "1", "2", "3"];
+
   return (
     <div className="max-w-2xl mx-auto">
       <Button variant="outline" asChild className="mb-4">
@@ -126,7 +126,7 @@ export default function RecordMatchPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline">Record a Match</CardTitle>
           <CardDescription>
-            Enter the match results in sets (e.g., 3-2) for &quot;{league.name}&quot;.
+            Enter the match results for &quot;{league.name}&quot;. First to 3 wins.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,9 +166,18 @@ export default function RecordMatchPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Score</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g. 3" {...field} />
-                        </FormControl>
+                         <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="-" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {scoreOptions.map(score => (
+                              <SelectItem key={`a-${score}`} value={score}>{score}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage className="absolute" />
                       </FormItem>
                     )}
@@ -198,57 +207,23 @@ export default function RecordMatchPage() {
                     render={({ field }) => (
                       <FormItem>
                          <FormLabel className="opacity-0 hidden sm:block">Score</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g. 2" {...field} />
-                        </FormControl>
+                         <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="-" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {scoreOptions.map(score => (
+                              <SelectItem key={`b-${score}`} value={score}>{score}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage className="absolute" />
                       </FormItem>
                     )}
                   />
                 </div>
-
-              {playerA && playerB && (
-                  <FormField
-                  control={form.control}
-                  name="winnerId"
-                  render={({ field }) => (
-                      <FormItem className="space-y-3">
-                      <FormLabel>Who won?</FormLabel>
-                      <FormControl>
-                          <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                          >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                  <RadioGroupItem value={playerA.id} />
-                              </FormControl>
-                              <FormLabel className="font-normal flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                      <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                  </div>
-                                  {playerA.name}
-                              </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                  <RadioGroupItem value={playerB.id} />
-                              </FormControl>
-                              <FormLabel className="font-normal flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                                      <UserIcon className="w-3 h-3 text-muted-foreground" />
-                                  </div>
-                                  {playerB.name}
-                              </FormLabel>
-                          </FormItem>
-                          </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-                  />
-              )}
 
                 <Button type="submit">Submit Result</Button>
               </form>
