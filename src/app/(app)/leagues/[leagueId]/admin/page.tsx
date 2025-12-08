@@ -81,6 +81,15 @@ export default function LeagueAdminPage() {
       
       const leagueData = await getLeagueById(leagueId);
       if (leagueData) {
+        const isSuperAdmin = user.email === 'markus.koenigreich@gmail.com';
+        const isAdmin = leagueData.adminIds.includes(user.id);
+
+        if (!isAdmin && !isSuperAdmin) {
+            toast({ variant: "destructive", title: "Unauthorized", description: "You are not an admin for this league." });
+            router.push(`/leagues/${leagueId}`);
+            return;
+        }
+
         setLeague(leagueData);
         setInviteCode(leagueData.inviteCode);
         form.reset({
@@ -89,11 +98,6 @@ export default function LeagueAdminPage() {
             privacy: leagueData.privacy,
             leaderboardVisible: leagueData.leaderboardVisible ?? true,
         });
-
-        if (!leagueData.adminIds.includes(user.id)) {
-            toast({ variant: "destructive", title: "Unauthorized", description: "You are not an admin for this league." });
-            router.push(`/leagues/${leagueId}`);
-        }
 
       } else {
         notFound();

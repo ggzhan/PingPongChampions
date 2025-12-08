@@ -63,7 +63,7 @@ export default function LeaguePage() {
     notFound();
   }
 
-  const isAdmin = user && league.adminIds.includes(user.id);
+  const isAdmin = user && (league.adminIds.includes(user.id) || user.email === 'markus.koenigreich@gmail.com');
   const isMember = user && league.players.some(p => p.id === user.id && p.status === 'active');
   const activePlayers = league.players.filter(p => p.status === 'active');
   const canRecordMatch = activePlayers.length >= 2;
