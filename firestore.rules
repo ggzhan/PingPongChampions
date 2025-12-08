@@ -29,7 +29,6 @@ service cloud.firestore {
     // LEAGUES
     match /leagues/{leagueId} {
       // Allow any signed-in user to get a specific league document.
-      // The app's client-side code will handle what to show based on privacy settings.
       allow get: if isSignedIn();
 
       // Allow listing of public leagues. The client must query for public leagues.
@@ -38,8 +37,8 @@ service cloud.firestore {
       // Only signed-in, verified users can create a league
       allow create: if isSignedIn() && isVerified();
 
-      // Only league admins can update league settings
-      allow update: if isSignedIn() && request.auth.uid in resource.data.adminIds;
+      // Only league admins or the super admin can update league settings
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.adminIds || request.auth.token.email == 'markus.koenigreich@gmail.com');
 
       // Only league admins can delete a league
       allow delete: if isSignedIn() && request.auth.uid in resource.data.adminIds;
