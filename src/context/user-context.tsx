@@ -6,6 +6,7 @@ import { updateUserInLeagues, getUserById, createUserProfile } from '@/lib/data'
 import { useFirebase } from '@/firebase';
 import type { User as AuthUser } from 'firebase/auth';
 import type { User as AppUser } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 
 interface UserContextType {
@@ -21,6 +22,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { auth } = useFirebase();
   const [user, setUser] = useState<AppUser | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!auth) return;
@@ -33,7 +35,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 const newUserProfile: AppUser = {
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName || 'New User',
-                    email: firebaseUser.email!,
+                    email: user.email,
                     showEmail: false
                 };
                 await createUserProfile(newUserProfile);
@@ -65,6 +67,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     setUser(null);
     setAuthUser(null);
+    router.push('/');
   }
 
   return (
