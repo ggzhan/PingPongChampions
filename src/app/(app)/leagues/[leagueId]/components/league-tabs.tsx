@@ -36,7 +36,7 @@ export default function LeagueTabs({ league }: { league: League }) {
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
-      <TabsList className="flex w-full">
+      <TabsList className="flex w-full h-auto">
         <TabsTrigger value="rankings" className="py-2.5 text-base flex-1">Rankings</TabsTrigger>
         <TabsTrigger value="matches" className="py-2.5 text-base flex-1">Matches</TabsTrigger>
       </TabsList>
@@ -79,10 +79,10 @@ export default function LeagueTabs({ league }: { league: League }) {
                             {player.showEmail && player.email && (
                               <TooltipProvider>
                                 <Tooltip>
-                                  <TooltipTrigger>
-                                      <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
-                                          <Mail className="h-4 w-4" />
-                                      </a>
+                                  <TooltipTrigger asChild>
+                                    <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
+                                      <Mail className="h-4 w-4" />
+                                    </a>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>{player.email}</p>
