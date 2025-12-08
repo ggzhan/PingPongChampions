@@ -52,8 +52,6 @@ export default function LeaguesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
-  const [showSearch, setShowSearch] = useState(false);
-
 
   useEffect(() => {
     async function fetchLeagues() {
@@ -89,11 +87,12 @@ export default function LeaguesPage() {
   if (loading) {
     return (
       <div>
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold font-headline">Leagues</h1>
+        <div className="space-y-4 mb-6">
+          <h1 className="text-3xl font-bold font-headline">Leagues</h1>
+          <div className="flex gap-2">
+            <div className="w-64 h-10 bg-muted rounded animate-pulse"></div>
+            <div className="w-40 h-10 bg-muted rounded animate-pulse"></div>
           </div>
-           <div className="w-full md:w-64 h-10 bg-muted rounded animate-pulse"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -115,41 +114,20 @@ export default function LeaguesPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Leagues</h1>
-        </div>
-        <div className="flex w-full md:w-auto justify-end gap-2">
-            <div className="relative flex-grow md:flex-grow-0 md:w-64">
-                <div className="md:hidden flex-grow-0">
-                    {showSearch ? (
-                         <Input
-                            type="search"
-                            placeholder="Search leagues..."
-                            className="pl-8 w-full"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            autoFocus
-                            onBlur={() => setShowSearch(false)}
-                        />
-                    ) : (
-                        <Button variant="outline" size="icon" onClick={() => setShowSearch(true)}>
-                            <Search className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-                 <div className="hidden md:block relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search leagues..."
-                        className="pl-8 w-full"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+      <div className="space-y-4 mb-6">
+        <h1 className="text-3xl font-bold font-headline">Leagues</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search leagues..."
+                    className="pl-8 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
-            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
               <Link href="/leagues/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> 
                 <span>Create League</span>
