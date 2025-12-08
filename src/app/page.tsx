@@ -119,9 +119,9 @@ export default function LeaguesPage() {
         <div>
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
         </div>
-        <div className="flex w-full md:w-auto md:justify-end gap-2">
+        <div className="flex w-full md:w-auto justify-end gap-2">
             <div className="relative flex-grow md:flex-grow-0 md:w-64">
-                <div className="md:hidden">
+                <div className="md:hidden flex-grow-0">
                     {showSearch ? (
                          <Input
                             type="search"
