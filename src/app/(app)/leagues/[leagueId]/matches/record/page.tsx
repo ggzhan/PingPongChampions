@@ -141,12 +141,13 @@ export default function RecordMatchPage() {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-[1fr_120px] gap-x-4 gap-y-6 items-end">
+                  {/* Row 1: Player A */}
                   <FormField
                     control={form.control}
                     name="playerAId"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem>
                         <FormLabel>Player A</FormLabel>
                         <PlayerCombobox
                           players={activePlayers}
@@ -161,9 +162,24 @@ export default function RecordMatchPage() {
                   />
                   <FormField
                     control={form.control}
+                    name="playerAScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Score</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 3" {...field} />
+                        </FormControl>
+                        <FormMessage className="absolute" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Row 2: Player B */}
+                   <FormField
+                    control={form.control}
                     name="playerBId"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem>
                         <FormLabel>Player B</FormLabel>
                         <PlayerCombobox
                           players={activePlayers}
@@ -176,32 +192,16 @@ export default function RecordMatchPage() {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="playerAScore"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Player A Score (Sets)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g. 3" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   <FormField
                     control={form.control}
                     name="playerBScore"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Player B Score (Sets)</FormLabel>
+                         <FormLabel className="opacity-0 hidden sm:block">Score</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="e.g. 2" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="absolute" />
                       </FormItem>
                     )}
                   />
