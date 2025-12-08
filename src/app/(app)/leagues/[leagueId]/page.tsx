@@ -117,7 +117,7 @@ export default function LeaguePage() {
         </CardHeader>
         <CardContent>
             <Separator className="mb-4"/>
-            <div className="flex items-start gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
                 {!isMember && user && league.privacy === 'public' && (
                 <Button onClick={handleJoinLeague}>
                   <UserPlus className="mr-2 h-4 w-4" /> Join League
