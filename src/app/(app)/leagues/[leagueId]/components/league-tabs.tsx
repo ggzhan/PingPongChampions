@@ -36,9 +36,9 @@ export default function LeagueTabs({ league }: { league: League }) {
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="rankings" className="py-2.5 text-base">Rankings</TabsTrigger>
-        <TabsTrigger value="matches" className="py-2.5 text-base">Matches</TabsTrigger>
+      <TabsList className="flex w-full">
+        <TabsTrigger value="rankings" className="py-2.5 text-base flex-1">Rankings</TabsTrigger>
+        <TabsTrigger value="matches" className="py-2.5 text-base flex-1">Matches</TabsTrigger>
       </TabsList>
       <TabsContent value="rankings">
         <Card>
@@ -79,7 +79,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                             {player.showEmail && player.email && (
                               <TooltipProvider>
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
+                                  <TooltipTrigger>
                                       <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
                                           <Mail className="h-4 w-4" />
                                       </a>
