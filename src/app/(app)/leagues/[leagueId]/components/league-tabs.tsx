@@ -8,10 +8,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus } from "lucide-react";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus, TrendingUp, TrendingDown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUser } from '@/context/user-context';
+import { calculateEloChange } from '@/lib/data';
 
 
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
@@ -41,6 +43,7 @@ const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) 
 
 export default function LeagueTabs({ league }: { league: League }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useUser();
   
   const activePlayers = league.players.filter(p => p.status === 'active');
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -55,6 +58,7 @@ export default function LeagueTabs({ league }: { league: League }) {
   });
 
   const sortedPlayersByRank = [...playersWithTrend].sort((a, b) => b.elo - a.elo);
+  const currentUserPlayer = user ? activePlayers.find(p => p.id === user.id) : null;
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
@@ -68,40 +72,84 @@ export default function LeagueTabs({ league }: { league: League }) {
             <CardTitle>Leaderboard</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[60px]">Rank</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead className="text-right">ELO</TableHead>
-                  <TableHead className="text-center w-[80px]">W/L</TableHead>
-                  <TableHead className="text-center w-[80px]">Trend</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPlayersByRank.map((player, index) => (
-                  <TableRow key={player.id}>
-                    <TableCell className="font-medium text-center">{index + 1}</TableCell>
-                    <TableCell>
-                      <PlayerLink leagueId={league.id} player={player} />
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{player.elo}</TableCell>
-                    <TableCell className="text-center">
-                        <span className="text-green-500 font-semibold">{player.wins}</span>
-                        <span className="text-muted-foreground">/</span>
-                        <span className="text-red-500 font-semibold">{player.losses}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                        <div className="flex justify-center">
-                            {player.trend === 'up' && <ArrowUp className="h-5 w-5 text-green-500" />}
-                            {player.trend === 'down' && <ArrowDown className="h-5 w-5 text-red-500" />}
-                            {player.trend === 'neutral' && <Minus className="h-5 w-5 text-muted-foreground" />}
-                        </div>
-                    </TableCell>
+            <TooltipProvider>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[60px]">Rank</TableHead>
+                    <TableHead>Player</TableHead>
+                    <TableHead className="text-right">ELO</TableHead>
+                    <TableHead className="text-center w-[80px]">W/L</TableHead>
+                    <TableHead className="text-center w-[80px]">Trend</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedPlayersByRank.map((player, index) => {
+                    let potentialEloChange: { win: number; loss: number; } | null = null;
+
+                    if (currentUserPlayer && player.id !== currentUserPlayer.id) {
+                      const selfMatchesPlayed = currentUserPlayer.wins + currentUserPlayer.losses;
+                      const eloWin = calculateEloChange(currentUserPlayer.elo, player.elo, selfMatchesPlayed, 'win');
+                      const eloLoss = calculateEloChange(currentUserPlayer.elo, player.elo, selfMatchesPlayed, 'loss');
+                      potentialEloChange = { win: eloWin, loss: eloLoss };
+                    }
+                    
+                    const rowContent = (
+                       <TableRow key={player.id} className={player.id === currentUserPlayer?.id ? 'bg-muted/50 hover:bg-muted' : ''}>
+                          <TableCell className="font-medium text-center">{index + 1}</TableCell>
+                          <TableCell>
+                            <PlayerLink leagueId={league.id} player={player} />
+                          </TableCell>
+                          <TableCell className="text-right font-mono">{player.elo}</TableCell>
+                          <TableCell className="text-center">
+                              <span className="text-green-500 font-semibold">{player.wins}</span>
+                              <span className="text-muted-foreground">/</span>
+                              <span className="text-red-500 font-semibold">{player.losses}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                              <div className="flex justify-center">
+                                  {player.trend === 'up' && <ArrowUp className="h-5 w-5 text-green-500" />}
+                                  {player.trend === 'down' && <ArrowDown className="h-5 w-5 text-red-500" />}
+                                  {player.trend === 'neutral' && <Minus className="h-5 w-5 text-muted-foreground" />}
+                              </div>
+                          </TableCell>
+                        </TableRow>
+                    );
+
+                    if (potentialEloChange) {
+                      return (
+                        <Tooltip key={player.id}>
+                          <TooltipTrigger asChild>{rowContent}</TooltipTrigger>
+                          <TooltipContent>
+                             <div className="p-1">
+                                <h4 className="font-semibold mb-2 text-center">Potential ELO Change vs {player.name}</h4>
+                                <div className="flex justify-center items-center gap-6 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5 text-green-500" />
+                                        <div>
+                                            <span className="font-bold text-green-500">+{potentialEloChange.win}</span>
+                                            <span className="text-muted-foreground"> for a win</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <TrendingDown className="h-5 w-5 text-red-500" />
+                                        <div>
+                                            <span className="font-bold text-red-500">{potentialEloChange.loss}</span>
+                                            <span className="text-muted-foreground"> for a loss</span>
+                                        </div>
+                                    </div>
+                                </div>
+                           </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+
+                    return rowContent;
+                  })}
+                </TableBody>
+              </Table>
+            </TooltipProvider>
           </CardContent>
         </Card>
       </TabsContent>
