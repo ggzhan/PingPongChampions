@@ -55,10 +55,9 @@ export default function LeagueTabs({ league }: { league: League }) {
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="rankings">Rankings</TabsTrigger>
         <TabsTrigger value="matches">Matches</TabsTrigger>
-        <TabsTrigger value="players">Players</TabsTrigger>
       </TabsList>
       <TabsContent value="rankings">
         <Card>
@@ -136,64 +135,6 @@ export default function LeagueTabs({ league }: { league: League }) {
                     })}
                   </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-      <TabsContent value="players">
-        <Card>
-          <CardHeader>
-            <CardTitle>Players</CardTitle>
-            <CardDescription>
-                A list of all active players in this league, sorted by matches played.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-                 <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search players..."
-                        className="pl-8 w-full md:w-1/2 lg:w-1/3"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
-             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Player</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="text-right">Matches Played</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPlayers.map((player) => (
-                  <TableRow key={player.id}>
-                    <TableCell>
-                      <PlayerLink leagueId={league.id} player={player} />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                        {player.showEmail ? (
-                             <a href={`mailto:${player.email}`} className="flex items-center gap-2 hover:underline">
-                                <Mail className="h-4 w-4"/>
-                                {player.email}
-                             </a>
-                        ) : (
-                            <span className="italic">Not shared</span>
-                        )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{player.matchesPlayed}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {filteredPlayers.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                    No players found matching your search.
-                </div>
             )}
           </CardContent>
         </Card>
