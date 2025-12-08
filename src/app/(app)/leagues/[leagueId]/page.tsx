@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import JoinPrivateLeagueForm from "./components/join-private-league-form";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 export default function LeaguePage() {
   const params = useParams();
@@ -113,31 +114,33 @@ export default function LeaguePage() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
-            <div className="flex-1">
-               <div className="flex items-center gap-4 mb-2 flex-wrap">
-                <CardTitle className="text-3xl font-bold font-headline">{league.name}</CardTitle>
-                <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
-                    {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
-                    {league.privacy}
+        <CardHeader className="pb-4">
+          <div className="flex-1">
+              <div className="flex items-center gap-4 mb-2 flex-wrap">
+              <CardTitle className="text-3xl font-bold font-headline">{league.name}</CardTitle>
+              <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
+                  {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
+                  {league.privacy}
+              </Badge>
+              {league.privacy === 'private' && !league.leaderboardVisible && (
+                <Badge variant="secondary" className="capitalize flex gap-1.5 items-center">
+                  <EyeOff className="h-3 w-3"/> Hidden Leaderboard
                 </Badge>
-                {league.privacy === 'private' && !league.leaderboardVisible && (
-                  <Badge variant="secondary" className="capitalize flex gap-1.5 items-center">
-                    <EyeOff className="h-3 w-3"/> Hidden Leaderboard
-                  </Badge>
-                )}
-              </div>
-              <CardDescription className="max-w-2xl">{league.description}</CardDescription>
+              )}
             </div>
-            <div className="flex items-center gap-2 mt-4 md:mt-0 flex-wrap justify-end">
-               {!isMember && user && league.privacy === 'public' && (
+            <CardDescription className="max-w-2xl">{league.description}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+            <Separator className="mb-4"/>
+            <div className="flex items-center gap-2 flex-wrap">
+                {!isMember && user && league.privacy === 'public' && (
                 <Button onClick={handleJoinLeague}>
                   <UserPlus className="mr-2 h-4 w-4" /> Join League
                 </Button>
               )}
-               {isMember && user && (
-                 <>
+                {isMember && user && (
+                  <>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -179,7 +182,7 @@ export default function LeaguePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                 </>
+                  </>
               )}
               <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
               {isAdmin && (
@@ -190,13 +193,12 @@ export default function LeaguePage() {
                 </Button>
               )}
             </div>
-          </div>
-        </CardHeader>
-         {showJoinForm && (
-            <CardContent>
-                <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
-            </CardContent>
-         )}
+            {showJoinForm && (
+              <div className="mt-6">
+                  <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
+              </div>
+            )}
+        </CardContent>
       </Card>
 
       {showLeaderboard && <LeagueTabs league={league} />}
