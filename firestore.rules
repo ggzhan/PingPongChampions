@@ -40,8 +40,8 @@ service cloud.firestore {
       // Only league admins or the super admin can update league settings
       allow update: if isSignedIn() && (request.auth.uid in resource.data.adminIds || request.auth.token.email == 'markus.koenigreich@gmail.com');
 
-      // Only league admins can delete a league
-      allow delete: if isSignedIn() && request.auth.uid in resource.data.adminIds;
+      // Only league admins or the super admin can delete a league
+      allow delete: if isSignedIn() && (request.auth.uid in resource.data.adminIds || request.auth.token.email == 'markus.koenigreich@gmail.com');
     }
   }
 }
