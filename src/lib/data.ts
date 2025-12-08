@@ -45,7 +45,7 @@ export async function getLeagues(): Promise<League[]> {
     
     const result = leagues.map(league => {
         let lastActivityDate: Date;
-        const leagueCreationDate = league.createdAt instanceof Timestamp ? league.createdAt.toDate() : new Date(league.createdAt);
+        const leagueCreationDate = league.createdAt instanceof Timestamp ? league.createdAt.toDate() : new Date(league.createdAt as string);
 
         if (league.matches && league.matches.length > 0) {
             const lastMatchDate = new Date(Math.max(...league.matches.map(m => new Date(m.createdAt).getTime())));

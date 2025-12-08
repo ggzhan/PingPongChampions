@@ -73,7 +73,7 @@ export default function UserManagementPage() {
       setUsers(users.filter((u) => u.id !== userToDelete.id));
       toast({
         title: "User Deleted",
-        description: `All data for ${userToDelete.name} has been anonymized and they have been removed.`,
+        description: `All data for ${userToDelete.name} has been anonymized and their user record has been removed.`,
       });
     } catch (error: any) {
       toast({
@@ -115,29 +115,27 @@ export default function UserManagementPage() {
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell className="text-right">
-                    {user?.id !== u.id && (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="icon">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently anonymize the user '{u.name}' and remove them from the system. It will not delete their authentication record, and they will still be able to log in.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteUser(u)}>
-                                    Delete User
-                                </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    )}
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently anonymize the user '{u.name}' in all leagues and remove their user record. It will not delete their authentication record, and they will still be able to log in.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteUser(u)}>
+                                Delete User Data
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
