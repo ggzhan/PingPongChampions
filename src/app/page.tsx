@@ -7,10 +7,47 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { PlusCircle, KeyRound, Globe, Lock, Search } from "lucide-react";
 import { getLeagues } from "@/lib/data";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { League } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/context/user-context";
+
+const LeagueCard = ({ league }: { league: League }) => (
+  <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
+    <CardHeader>
+      <div className="flex justify-between items-start">
+          <CardTitle className="font-headline pr-4">{league.name}</CardTitle>
+          <Badge variant="outline" className="capitalize flex gap-1.5 items-center shrink-0">
+              {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
+              {league.privacy}
+          </Badge>
+      </div>
+      <CardDescription className="flex-grow min-h-[40px] pt-2">{league.description || 'No description available.'}</CardDescription>
+    </CardHeader>
+    <CardContent className="flex-grow">
+       <div className="text-sm text-muted-foreground">
+          {league.activePlayerCount} active players
+       </div>
+    </CardContent>
+    <CardFooter>
+      <Button asChild className="w-full">
+        <Link href={`/leagues/${league.id}`}>View League</Link>
+      </Button>
+    </CardFooter>
+  </Card>
+);
+
+const LeagueGrid = ({ leagues }: { leagues: League[] }) => {
+    if (leagues.length === 0) {
+        return null;
+    }
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {leagues.map((league) => <LeagueCard key={league.id} league={league} />)}
+        </div>
+    );
+};
+
 
 export default function LeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
@@ -29,9 +66,25 @@ export default function LeaguesPage() {
     fetchLeagues();
   }, []);
   
-  const filteredLeagues = leagues.filter(league => 
-    league.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { myLeagues, otherLeagues } = useMemo(() => {
+    const filtered = leagues.filter(league => 
+      league.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    if (!user) {
+        return { myLeagues: [], otherLeagues: filtered };
+    }
+
+    const myLeagues = filtered.filter(league => 
+        league.players.some(p => p.id === user.id && p.status === 'active')
+    );
+    const otherLeagues = filtered.filter(league => 
+        !league.players.some(p => p.id === user.id && p.status === 'active')
+    );
+
+    return { myLeagues, otherLeagues };
+  }, [leagues, user, searchTerm]);
+
 
   if (loading) {
     return (
@@ -62,7 +115,7 @@ export default function LeaguesPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
@@ -99,37 +152,26 @@ export default function LeaguesPage() {
             </Link>
           </Button>
         </div>
-      ) : filteredLeagues.length === 0 ? (
+      ) : myLeagues.length === 0 && otherLeagues.length === 0 ? (
          <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <h2 className="text-xl font-semibold">No leagues match your search</h2>
           <p className="text-muted-foreground mt-2">Try a different search term.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLeagues.map((league) => (
-            <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="font-headline pr-4">{league.name}</CardTitle>
-                    <Badge variant="outline" className="capitalize flex gap-1.5 items-center shrink-0">
-                        {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
-                        {league.privacy}
-                    </Badge>
+        <div className="space-y-8">
+            {myLeagues.length > 0 && (
+                <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold font-headline">My Leagues</h2>
+                    <LeagueGrid leagues={myLeagues} />
                 </div>
-                <CardDescription className="flex-grow min-h-[40px] pt-2">{league.description || 'No description available.'}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                 <div className="text-sm text-muted-foreground">
-                    {league.activePlayerCount} active players
-                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <Link href={`/leagues/${league.id}`}>View League</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+            )}
+            
+            {otherLeagues.length > 0 && (
+                 <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold font-headline">Discover Leagues</h2>
+                    <LeagueGrid leagues={otherLeagues} />
+                </div>
+            )}
         </div>
       )}
     </div>
