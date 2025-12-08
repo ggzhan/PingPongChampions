@@ -125,66 +125,72 @@ export default function LeagueTabs({ league }: { league: League }) {
         </Card>
       </TabsContent>
       <TabsContent value="matches" className="py-4">
-        <Card>
-            <CardHeader>
-                <CardTitle>Match History</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="hidden sm:table-cell">Date</TableHead>
-                            <TableHead>Players</TableHead>
-                            <TableHead className="text-center">Result</TableHead>
-                            <TableHead className="text-right">ELO Change</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedMatches.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                            No matches recorded yet.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sortedMatches.map((match) => {
-                          const winnerIsPlayerA = match.winnerId === match.playerAId;
-                          const winner = winnerIsPlayerA ? match.playerAName : match.playerBName;
-                          const loser = winnerIsPlayerA ? match.playerBName : match.playerAName;
-                          const winnerScore = winnerIsPlayerA ? match.playerAScore : match.playerBScore;
-                          const loserScore = winnerIsPlayerA ? match.playerBScore : match.playerAScore;
-                          const winnerEloChange = winnerIsPlayerA ? match.eloChangeA : match.eloChangeB;
-                          const loserEloChange = winnerIsPlayerA ? match.eloChangeB : match.eloChangeA;
+          <Card>
+              <CardHeader>
+                  <CardTitle>Match History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                              <TableHead className="hidden sm:table-cell">Date</TableHead>
+                              <TableHead>Players</TableHead>
+                              <TableHead className="text-center">Result</TableHead>
+                              <TableHead className="text-right">ELO Change</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedMatches.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center text-center p-8">
+                                    <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-xl font-semibold">No Matches Yet</h3>
+                                    <p className="text-muted-foreground mt-2">
+                                        Record the first match to get the competition started!
+                                    </p>
+                                </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          sortedMatches.map((match) => {
+                            const winnerIsPlayerA = match.winnerId === match.playerAId;
+                            const winner = winnerIsPlayerA ? match.playerAName : match.playerBName;
+                            const loser = winnerIsPlayerA ? match.playerBName : match.playerAName;
+                            const winnerScore = winnerIsPlayerA ? match.playerAScore : match.playerBScore;
+                            const loserScore = winnerIsPlayerA ? match.playerBScore : match.playerAScore;
+                            const winnerEloChange = winnerIsPlayerA ? match.eloChangeA : match.eloChangeB;
+                            const loserEloChange = winnerIsPlayerA ? match.eloChangeB : match.eloChangeA;
 
-                          return (
-                              <TableRow key={match.id}>
-                                  <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <Trophy className="w-4 h-4 text-amber-500"/>
-                                      <span className="font-semibold">{winner}</span>
-                                      <span className="text-muted-foreground">vs</span>
-                                      <span>{loser}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-center font-mono font-semibold">
-                                    {winnerScore} - {loserScore}
-                                  </TableCell>
-                                   <TableCell className="text-right font-mono text-xs">
-                                     <div>
-                                      <span className="font-bold text-green-500">+{winnerEloChange}</span>
-                                      <span className="text-muted-foreground"> / </span>
-                                      <span className="font-bold text-red-500">{loserEloChange}</span>
-                                     </div>
-                                  </TableCell>
-                              </TableRow>
-                          );
-                        })
-                      )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                            return (
+                                <TableRow key={match.id}>
+                                    <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <Trophy className="w-4 h-4 text-amber-500"/>
+                                        <span className="font-semibold">{winner}</span>
+                                        <span className="text-muted-foreground">vs</span>
+                                        <span>{loser}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-center font-mono font-semibold">
+                                      {winnerScore} - {loserScore}
+                                    </TableCell>
+                                     <TableCell className="text-right font-mono text-xs">
+                                       <div>
+                                        <span className="font-bold text-green-500">+{winnerEloChange}</span>
+                                        <span className="text-muted-foreground"> / </span>
+                                        <span className="font-bold text-red-500">{loserEloChange}</span>
+                                       </div>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                  </Table>
+              </CardContent>
+          </Card>
       </TabsContent>
     </Tabs>
   );
