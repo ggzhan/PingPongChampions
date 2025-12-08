@@ -352,7 +352,7 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   return Promise.resolve();
 }
 
-function calculateEloChange(playerElo: number, opponentElo: number, playerMatchesPlayed: number, result: 'win' | 'loss'): number {
+export function calculateEloChange(playerElo: number, opponentElo: number, playerMatchesPlayed: number, result: 'win' | 'loss'): number {
   // K-factor is higher for new players to allow their ELO to change more quickly.
   // It stabilizes as they play more matches.
   const K = playerMatchesPlayed < 30 ? 40 : 20;

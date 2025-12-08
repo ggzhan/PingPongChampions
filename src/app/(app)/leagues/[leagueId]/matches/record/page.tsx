@@ -14,12 +14,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getLeagueById, recordMatch } from "@/lib/data";
+import { getLeagueById, recordMatch, calculateEloChange } from "@/lib/data";
 import { useRouter, notFound, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Player, League } from "@/lib/types";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, TrendingUp, TrendingDown } from "lucide-react";
 import Link from 'next/link';
 import { useApp } from "@/context/app-context";
 import { PlayerCombobox } from "./components/player-combobox";
@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useUser } from "@/context/user-context";
 
 
 const formSchema = z.object({
@@ -51,6 +52,7 @@ export default function RecordMatchPage() {
   const leagueId = params.leagueId as string;
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const { refresh } = useApp();
@@ -83,6 +85,27 @@ export default function RecordMatchPage() {
 
   const activePlayers = league?.players.filter(p => p.status === 'active') || [];
   const canRecordMatch = activePlayers.length >= 2;
+
+  const potentialEloChange = useMemo(() => {
+    if (!user || !playerAId || !playerBId || playerAId === playerBId) return null;
+
+    const currentUserIsPlayer = user.id === playerAId || user.id === playerBId;
+    if (!currentUserIsPlayer) return null;
+
+    const self = activePlayers.find(p => p.id === user.id);
+    const opponentId = user.id === playerAId ? playerBId : playerAId;
+    const opponent = activePlayers.find(p => p.id === opponentId);
+
+    if (!self || !opponent) return null;
+
+    const selfMatchesPlayed = self.wins + self.losses;
+
+    const eloWin = calculateEloChange(self.elo, opponent.elo, selfMatchesPlayed, 'win');
+    const eloLoss = calculateEloChange(self.elo, opponent.elo, selfMatchesPlayed, 'loss');
+
+    return { win: eloWin, loss: eloLoss };
+  }, [playerAId, playerBId, user, activePlayers]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!league || !canRecordMatch) return;
@@ -137,7 +160,7 @@ export default function RecordMatchPage() {
              </div>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-[1fr_120px] gap-x-4 gap-y-6 items-end">
                   {/* Row 1: Player A */}
                   <FormField
@@ -221,6 +244,28 @@ export default function RecordMatchPage() {
                     )}
                   />
                 </div>
+
+                {potentialEloChange && (
+                   <div className="p-4 bg-muted/50 rounded-lg text-center">
+                        <h4 className="font-semibold mb-2">Potential ELO Change</h4>
+                        <div className="flex justify-center items-center gap-6 text-sm">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5 text-green-500" />
+                                <div>
+                                    <span className="font-bold text-green-500">+{potentialEloChange.win}</span>
+                                    <span className="text-muted-foreground"> for a win</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <TrendingDown className="h-5 w-5 text-red-500" />
+                                <div>
+                                    <span className="font-bold text-red-500">{potentialEloChange.loss}</span>
+                                    <span className="text-muted-foreground"> for a loss</span>
+                                </div>
+                            </div>
+                        </div>
+                   </div>
+                )}
 
                 <Button type="submit">Submit Result</Button>
               </form>
