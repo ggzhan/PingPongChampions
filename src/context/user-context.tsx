@@ -27,7 +27,7 @@ const mockUser: User = {
   id: 'user-1', // This user is 'AlpacaRacer' in data.ts
   name: 'AlpacaRacer',
   email: 'john.doe@example.com',
-  showEmail: false,
+  showEmail: true,
 };
 
 // Create the provider component
