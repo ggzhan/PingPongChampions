@@ -69,7 +69,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
 }
 
 export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'> & { creator: User }): Promise<League> {
-    const { creator, adminIds, ...restOfLeagueData } = leagueData;
+    const { creator, ...restOfLeagueData } = leagueData;
     
     const newPlayer: Player = {
         id: creator.id,
@@ -365,6 +365,7 @@ export async function deleteUserAccount(userId: string): Promise<void> {
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
+        // Do not throw here to allow function to continue
     });
 
   const leagues = await getLeagues();
@@ -372,15 +373,15 @@ export async function deleteUserAccount(userId: string): Promise<void> {
 
   leagues.forEach(league => {
     let leagueWasUpdated = false;
-    const player = league.players.find(p => p.id === userId);
-    if (player) {
-      player.name = "Deleted User";
-      player.email = "";
-      player.showEmail = false;
-      player.status = 'inactive';
-      leagueWasUpdated = true;
-    }
-    (league.matches || []).forEach(match => {
+    const newPlayers = league.players.map(player => {
+        if (player.id === userId) {
+            leagueWasUpdated = true;
+            return { ...player, name: "Deleted User", email: "", showEmail: false, status: 'inactive' as 'inactive' };
+        }
+        return player;
+    });
+
+    const newMatches = (league.matches || []).map(match => {
       if (match.playerAId === userId) {
         match.playerAName = "Deleted User";
         leagueWasUpdated = true;
@@ -389,16 +390,18 @@ export async function deleteUserAccount(userId: string): Promise<void> {
         match.playerBName = "Deleted User";
         leagueWasUpdated = true;
       }
+      return match;
     });
+
      if(leagueWasUpdated) {
         const leagueRef = doc(db, 'leagues', league.id);
-        batch.update(leagueRef, { players: league.players, matches: league.matches });
+        batch.update(leagueRef, { players: newPlayers, matches: newMatches });
     }
   });
 
   await batch.commit().catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
-            path: "batch write",
+            path: "batch write for user deletion cleanup",
             operation: 'update',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -492,6 +495,22 @@ export async function getUserById(userId: string): Promise<User | null> {
     return null;
 }
 
+export async function getAllUsers(): Promise<User[]> {
+    const usersCol = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCol).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: usersCol.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        return null;
+    });
+
+    if (!userSnapshot) return [];
+
+    return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+}
+
 export async function createUserProfile(user: User): Promise<void> {
     const userDocRef = doc(db, 'users', user.id);
     const data = {
@@ -510,5 +529,3 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
-
-    

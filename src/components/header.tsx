@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Trophy, User, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Trophy, User, LogOut, LogIn, UserPlus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Header() {
   const { user, logout } = useUser();
+  const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
@@ -54,6 +55,11 @@ export default function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
                 </DropdownMenuItem>
+                 {isSuperAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/users"><Shield className="mr-2 h-4 w-4" />User Management</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
