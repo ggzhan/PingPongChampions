@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,7 +29,12 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="mx-auto max-w-sm w-full">
+      <Card className="mx-auto max-w-sm w-full relative">
+        <Link href="/" aria-label="Close">
+            <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+                <X className="h-5 w-5" />
+            </Button>
+        </Link>
         <CardHeader>
           <CardTitle className="text-xl font-headline">Sign Up</CardTitle>
           <CardDescription>
