@@ -48,7 +48,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
-      <div className="container mx-auto flex h-16 items-center px-4">
+      <div className="container mx-auto flex flex-wrap items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2 mr-6">
           <Trophy className="h-6 w-6 text-primary" />
           <div>
@@ -56,11 +56,11 @@ export default function Header() {
             <p className="text-xs text-muted-foreground">Compete with friends in your own ping pong league.</p>
           </div>
         </Link>
-        <div className="flex flex-1 items-center justify-end gap-4 flex-wrap">
+        <div className="flex items-center justify-end gap-4 flex-wrap">
           {isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="bg-secondary border-transparent shadow-none hover:bg-secondary hover:text-current hover:shadow-sm focus-visible:ring-0 focus-visible:ring-offset-0">
+                <Button variant="ghost" className="bg-secondary border-transparent hover:shadow-sm focus-visible:ring-0 focus-visible:ring-offset-0">
                   <User className="mr-2 h-4 w-4" />
                   <span>{user.name}</span>
                 </Button>
