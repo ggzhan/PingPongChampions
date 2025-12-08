@@ -71,6 +71,7 @@ export default function LeagueManagementPage() {
         title: "League Deleted",
         description: `The league "${leagueToDelete.name}" has been permanently deleted.`,
       });
+      // No router.push, just stay on the page and let the state update re-render the list.
     } catch (error: any) {
       toast({
         variant: "destructive",
