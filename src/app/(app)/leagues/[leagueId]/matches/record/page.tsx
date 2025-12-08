@@ -43,9 +43,6 @@ const formSchema = z.object({
 }).refine(data => data.playerAScore !== data.playerBScore, {
     message: "Scores cannot be tied. A winner must be decided.",
     path: ["playerBScore"],
-}).refine(data => (data.playerAScore === 3 && data.playerBScore < 3) || (data.playerBScore === 3 && data.playerAScore < 3), {
-    message: "One player must score exactly 3 to win.",
-    path: ["playerAScore"],
 });
 
 
@@ -126,7 +123,7 @@ export default function RecordMatchPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline">Record a Match</CardTitle>
           <CardDescription>
-            Enter the match results for &quot;{league.name}&quot;. First to 3 wins.
+            Enter the match results for &quot;{league.name}&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>
