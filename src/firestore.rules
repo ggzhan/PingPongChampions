@@ -35,8 +35,8 @@ service cloud.firestore {
       // Allow any signed-in user to get a specific league document.
       allow get: if isSignedIn();
       
-      // Allow anyone to see public leagues, but only signed-in users to see all (including private they might belong to)
-      allow list: if isSignedIn() || resource.data.privacy == 'public';
+      // Allow anyone to see the list of all leagues on the homepage.
+      allow list: if true;
       
       // Only signed-in, verified users can create a league
       allow create: if isSignedIn() && isVerified();
