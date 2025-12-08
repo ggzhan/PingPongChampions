@@ -5,7 +5,7 @@ import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/da
 import { notFound, useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, UserPlus, Share2, LogOut, Globe, Lock, EyeOff, PlusCircle } from "lucide-react";
+import { Settings, UserPlus, LogOut, Globe, Lock, EyeOff, PlusCircle } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect, useCallback } from "react";
@@ -90,22 +90,6 @@ export default function LeaguePage() {
       });
     }
   };
-
-  const handleShare = () => {
-     if (league.privacy === 'private' && league.inviteCode && (isMember || isAdmin)) {
-      navigator.clipboard.writeText(league.inviteCode);
-      toast({
-        title: "Invite Code Copied!",
-        description: "The invite code for this private league has been copied to your clipboard.",
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-       toast({
-        title: "Link Copied!",
-        description: "The link to this league has been copied to your clipboard.",
-      });
-    }
-  };
   
   const showJoinForm = user && league.privacy === 'private' && !isMember;
   const showLeaderboard = league.privacy === 'public' || (league.privacy === 'private' && league.leaderboardVisible) || isMember || isAdmin;
@@ -133,7 +117,7 @@ export default function LeaguePage() {
         </CardHeader>
         <CardContent>
             <Separator className="mb-4"/>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-start gap-2 flex-wrap">
                 {!isMember && user && league.privacy === 'public' && (
                 <Button onClick={handleJoinLeague}>
                   <UserPlus className="mr-2 h-4 w-4" /> Join League
@@ -184,7 +168,9 @@ export default function LeaguePage() {
                   </AlertDialog>
                   </>
               )}
-              <Button variant="outline" onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
+               {showJoinForm && (
+                  <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
+              )}
               {isAdmin && (
                 <Button variant="secondary" asChild>
                   <Link href={`/leagues/${league.id}/admin`}>
@@ -193,11 +179,6 @@ export default function LeaguePage() {
                 </Button>
               )}
             </div>
-            {showJoinForm && (
-              <div className="mt-6">
-                  <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
-              </div>
-            )}
         </CardContent>
       </Card>
 

@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { joinLeagueByInviteCode } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
-import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   inviteCode: z.string().min(6, "Invite code must be 6 characters.").max(6, "Invite code must be 6 characters."),
@@ -66,34 +65,23 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
   }
 
   return (
-    <>
-        <Separator className="mb-6"/>
-        <div className="max-w-md mx-auto">
-            <h3 className="text-lg font-semibold">Join This Private League</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-                This league is private. Enter an invite code to join.
-            </p>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
-                    <FormField
-                    control={form.control}
-                    name="inviteCode"
-                    render={({ field }) => (
-                        <FormItem className="flex-grow">
-                        <FormLabel className="sr-only">Invite Code</FormLabel>
-                        <FormControl>
-                            <Input placeholder="ABCXYZ" {...field} className="uppercase font-mono tracking-widest text-lg"/>
-                        </FormControl>
-                        <FormMessage className="mt-2" />
-                        </FormItem>
-                    )}
-                    />
-                    <Button type="submit">Join League</Button>
-                </form>
-            </Form>
-        </div>
-    </>
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
+            <FormField
+            control={form.control}
+            name="inviteCode"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel className="sr-only">Invite Code</FormLabel>
+                <FormControl>
+                    <Input placeholder="Invite Code" {...field} className="uppercase font-mono tracking-widest"/>
+                </FormControl>
+                <FormMessage className="mt-2" />
+                </FormItem>
+            )}
+            />
+            <Button type="submit">Join League</Button>
+        </form>
+    </Form>
   );
 }
-
-    
