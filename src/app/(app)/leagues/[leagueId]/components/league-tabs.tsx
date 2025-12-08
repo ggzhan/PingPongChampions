@@ -37,10 +37,10 @@ export default function LeagueTabs({ league }: { league: League }) {
   return (
     <Tabs defaultValue="rankings" className="w-full">
       <TabsList className="flex w-full h-auto">
-        <TabsTrigger value="rankings" className="py-2.5 text-base flex-1">Rankings</TabsTrigger>
-        <TabsTrigger value="matches" className="py-2.5 text-base flex-1">Matches</TabsTrigger>
+        <TabsTrigger value="rankings" className="py-2.5 text-base flex-1 text-muted-foreground data-[state=active]:text-foreground">Rankings</TabsTrigger>
+        <TabsTrigger value="matches" className="py-2.5 text-base flex-1 text-muted-foreground data-[state=active]:text-foreground">Matches</TabsTrigger>
       </TabsList>
-      <TabsContent value="rankings">
+      <TabsContent value="rankings" className="py-4">
         <Card>
           <CardHeader>
             <CardTitle>Leaderboard</CardTitle>
@@ -124,7 +124,7 @@ export default function LeagueTabs({ league }: { league: League }) {
           </CardContent>
         </Card>
       </TabsContent>
-      <TabsContent value="matches">
+      <TabsContent value="matches" className="py-4">
         <Card>
           <CardHeader>
             <CardTitle>Match History</CardTitle>
