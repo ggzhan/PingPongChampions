@@ -18,9 +18,9 @@ if (!getApps().length) {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-if (process.env.NODE_ENV === 'development') {
-    // To avoid connecting to the emulator multiple times, we check if the
-    // emulators are already running.
+// To avoid connecting to the emulator multiple times, we check if the
+// emulators are already running. This is a robust way to connect in dev.
+try {
     // @ts-ignore
     if (!auth.emulatorConfig) {
         connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
@@ -29,6 +29,9 @@ if (process.env.NODE_ENV === 'development') {
     if (!db.emulator) {
         connectFirestoreEmulator(db, '127.0.0.1', 8080);
     }
+} catch (e) {
+    // This can happen in certain environments, we can ignore it.
 }
+
 
 export { app, auth, db, firebaseConfig };
