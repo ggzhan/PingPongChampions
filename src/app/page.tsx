@@ -52,6 +52,8 @@ export default function LeaguesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
+  const [showSearch, setShowSearch] = useState(false);
+
 
   useEffect(() => {
     async function fetchLeagues() {
@@ -119,19 +121,38 @@ export default function LeaguesPage() {
         </div>
         <div className="flex w-full md:w-auto md:justify-end gap-2">
             <div className="relative flex-grow md:flex-grow-0 md:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search leagues..."
-                    className="pl-8 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                <div className="md:hidden">
+                    {showSearch ? (
+                         <Input
+                            type="search"
+                            placeholder="Search leagues..."
+                            className="pl-8 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                            onBlur={() => setShowSearch(false)}
+                        />
+                    ) : (
+                        <Button variant="outline" size="icon" onClick={() => setShowSearch(true)}>
+                            <Search className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+                 <div className="hidden md:block relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search leagues..."
+                        className="pl-8 w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
             <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
               <Link href="/leagues/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> 
-                <span className="hidden sm:inline">Create League</span>
+                <span>Create League</span>
               </Link>
             </Button>
           </div>
