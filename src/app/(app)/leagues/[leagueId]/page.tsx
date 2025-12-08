@@ -129,7 +129,7 @@ export default function LeaguePage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="inline-block"> 
-                          <Button asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
+                          <Button variant="success" asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
                             <Link href={`/leagues/${league.id}/matches/record`}>
                                 <PlusCircle className="mr-2 h-4 w-4"/>Record Match
                             </Link>
