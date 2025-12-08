@@ -126,53 +126,64 @@ export default function LeagueTabs({ league }: { league: League }) {
       </TabsContent>
       <TabsContent value="matches" className="py-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Match History</CardTitle>
-          </CardHeader>
-          <CardContent>
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead className="w-1/4">Date</TableHead>
-                          <TableHead>Players</TableHead>
-                          <TableHead className="text-right w-1/4">Result</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedMatches.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                          No matches recorded yet.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      sortedMatches.map((match) => {
-                        const winner = match.winnerId === match.playerAId ? match.playerAName : match.playerBName;
-                        const loser = match.winnerId === match.playerAId ? match.playerBName : match.playerAName;
-                        const winnerScore = match.winnerId === match.playerAId ? match.playerAScore : match.playerBScore;
-                        const loserScore = match.winnerId === match.playerAId ? match.playerBScore : match.playerAScore;
+            <CardHeader>
+                <CardTitle>Match History</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="hidden sm:table-cell">Date</TableHead>
+                            <TableHead>Players</TableHead>
+                            <TableHead className="text-center">Result</TableHead>
+                            <TableHead className="text-right">ELO Change</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedMatches.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            No matches recorded yet.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        sortedMatches.map((match) => {
+                          const winnerIsPlayerA = match.winnerId === match.playerAId;
+                          const winner = winnerIsPlayerA ? match.playerAName : match.playerBName;
+                          const loser = winnerIsPlayerA ? match.playerBName : match.playerAName;
+                          const winnerScore = winnerIsPlayerA ? match.playerAScore : match.playerBScore;
+                          const loserScore = winnerIsPlayerA ? match.playerBScore : match.playerAScore;
+                          const winnerEloChange = winnerIsPlayerA ? match.eloChangeA : match.eloChangeB;
+                          const loserEloChange = winnerIsPlayerA ? match.eloChangeB : match.eloChangeA;
 
-                        return (
-                            <TableRow key={match.id}>
-                                <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Trophy className="w-4 h-4 text-amber-500"/>
-                                    <span className="font-semibold">{winner}</span>
-                                    <span className="text-muted-foreground">vs</span>
-                                    <span>{loser}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right font-mono font-semibold">
-                                  {winnerScore} - {loserScore}
-                                </TableCell>
-                            </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-              </Table>
-          </CardContent>
+                          return (
+                              <TableRow key={match.id}>
+                                  <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <Trophy className="w-4 h-4 text-amber-500"/>
+                                      <span className="font-semibold">{winner}</span>
+                                      <span className="text-muted-foreground">vs</span>
+                                      <span>{loser}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center font-mono font-semibold">
+                                    {winnerScore} - {loserScore}
+                                  </TableCell>
+                                   <TableCell className="text-right font-mono text-xs">
+                                     <div>
+                                      <span className="font-bold text-green-500">+{winnerEloChange}</span>
+                                      <span className="text-muted-foreground"> / </span>
+                                      <span className="font-bold text-red-500">{loserEloChange}</span>
+                                     </div>
+                                  </TableCell>
+                              </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                </Table>
+            </CardContent>
         </Card>
       </TabsContent>
     </Tabs>

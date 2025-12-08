@@ -141,15 +141,16 @@ export default function PlayerPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
-                          <TableHead className="w-1/4">Date</TableHead>
-                          <TableHead>Players</TableHead>
-                          <TableHead className="text-right w-1/4">Result</TableHead>
+                          <TableHead className="hidden sm:table-cell">Date</TableHead>
+                          <TableHead>Matchup</TableHead>
+                          <TableHead className="text-center">Result</TableHead>
+                          <TableHead className="text-right">ELO Change</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
                       {matchHistory.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                             No matches recorded yet for this player.
                             </TableCell>
                         </TableRow>
@@ -157,24 +158,30 @@ export default function PlayerPage() {
                         matchHistory.slice(0, 10).map(match => {
                             const isPlayerA = match.playerAId === playerId;
                             const didWin = match.winnerId === playerId;
-                            const winner = didWin ? player.name : (isPlayerA ? match.playerBName : match.playerAName);
-                            const loser = didWin ? (isPlayerA ? match.playerBName : match.playerAName) : player.name;
-                            const winnerScore = match.winnerId === match.playerAId ? match.playerAScore : match.playerBScore;
-                            const loserScore = match.winnerId === match.playerAId ? match.playerBScore : match.playerAScore;
+                            const opponentName = isPlayerA ? match.playerBName : match.playerAName;
+                            const winnerScore = didWin ? (isPlayerA ? match.playerAScore : match.playerBScore) : (isPlayerA ? match.playerBScore : match.playerAScore);
+                            const loserScore = didWin ? (isPlayerA ? match.playerBScore : match.playerAScore) : (isPlayerA ? match.playerAScore : match.playerBScore);
+                            const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
 
                           return (
-                              <TableRow key={match.id}>
-                                  <TableCell className="text-muted-foreground hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
+                              <TableRow key={match.id} className={didWin ? '' : 'text-muted-foreground'}>
+                                  <TableCell className="hidden sm:table-cell">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Trophy className={`w-4 h-4 ${didWin ? 'text-amber-500': 'text-transparent'}`}/>
-                                        <span className={`font-semibold ${didWin ? '' : 'text-muted-foreground'}`}>{winner}</span>
-                                        <span className="text-muted-foreground">vs</span>
-                                        <span className={didWin ? 'text-muted-foreground' : ''}>{loser}</span>
+                                        <Trophy className={`w-4 h-4 ${didWin ? 'text-amber-500' : 'text-transparent'}`}/>
+                                        <div>
+                                            <span className={`font-semibold ${didWin ? 'text-foreground' : ''}`}>{didWin ? "Win" : "Loss"}</span>
+                                            <span className="text-xs"> vs {opponentName}</span>
+                                        </div>
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-right font-mono font-semibold">
-                                    {winnerScore} - {loserScore}
+                                  <TableCell className="text-center font-mono">
+                                    <span className={`font-semibold ${didWin ? 'text-foreground' : ''}`}>{winnerScore} - {loserScore}</span>
+                                  </TableCell>
+                                   <TableCell className="text-right font-mono text-xs">
+                                     <span className={eloChange > 0 ? 'font-bold text-green-500' : 'font-bold text-red-500'}>
+                                        {eloChange > 0 ? `+${eloChange}`: eloChange}
+                                     </span>
                                   </TableCell>
                               </TableRow>
                           );
@@ -187,4 +194,3 @@ export default function PlayerPage() {
     </div>
   );
 }
-
