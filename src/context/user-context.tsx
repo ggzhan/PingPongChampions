@@ -68,6 +68,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setUser(null);
     setAuthUser(null);
     router.push('/');
+    router.refresh(); // Force a hard refresh to clear all state.
   }
 
   return (
