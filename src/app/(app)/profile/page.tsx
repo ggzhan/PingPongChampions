@@ -34,8 +34,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useUser } from "@/context/user-context";
 import { useEffect, useState } from "react";
-import { getLeagues, deleteUserAccount } from "@/lib/data";
-import type { League } from "@/lib/types";
+import { getLeagues, deleteUserAccount, updateUserInLeagues } from "@/lib/data";
+import type { League, User } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updatePassword } from "firebase/auth";
@@ -119,14 +119,22 @@ export default function ProfilePage() {
         }
     });
 
-    function onAccountSubmit(data: AccountFormValues) {
-        if(user) {
-            updateUser({id: user.id, ...data});
-            toast({
-                title: "Account Updated",
-                description: "Your account settings have been saved.",
-            });
-        }
+    async function onAccountSubmit(data: AccountFormValues) {
+        if(!user) return;
+        
+        const updatedDetails: User = {
+            id: user.id,
+            name: data.name,
+            email: user.email, // email cannot be changed here
+            showEmail: data.showEmail
+        };
+
+        await updateUserInLeagues(updatedDetails);
+        updateUser(updatedDetails); // Update context
+        toast({
+            title: "Account Updated",
+            description: "Your account settings have been saved.",
+        });
     }
 
     async function onPasswordSubmit(data: PasswordFormValues) {
@@ -151,17 +159,26 @@ export default function ProfilePage() {
     }
     
     async function handleAccountDelete() {
-        if (user) {
-            await deleteUserAccount(user.id);
-            if (authUser) {
+        if (user && authUser) {
+            try {
+                // First, anonymize all Firestore data
+                await deleteUserAccount(user.id);
+                // THEN, delete the actual auth user. This requires recent login.
                 await authUser.delete();
+                // Finally, log out locally
+                logout();
+                toast({
+                    title: "Account Deleted",
+                    description: "Your account has been successfully deleted.",
+                });
+                router.push('/');
+            } catch (error: any) {
+                 toast({
+                    variant: "destructive",
+                    title: "Error Deleting Account",
+                    description: "This is a sensitive operation and requires a recent login. Please log out and log back in before deleting your account.",
+                });
             }
-            logout();
-            toast({
-                title: "Account Deleted",
-                description: "Your account has been successfully deleted.",
-            });
-            router.push('/');
         }
     }
 
@@ -247,7 +264,7 @@ export default function ProfilePage() {
                                 render={({ field }) => (
                                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                                    <div className="space-y-0.5">
-                                      <FormLabel>Show Email on Profile</FormLabel>
+                                      <FormLabel>Show Email on Leaderboards</FormLabel>
                                       <FormDescription>
                                         Allow other users to see your email address.
                                       </FormDescription>
@@ -313,7 +330,7 @@ export default function ProfilePage() {
             <Card className="border-destructive">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Danger Zone</CardTitle>
-                    <CardDescription>These actions are permanent and cannot be undone.</CardDescription>
+                    <CardDescription>This action is permanent and cannot be undone.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <AlertDialog>

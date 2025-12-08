@@ -22,12 +22,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { getAuth, deleteUser } from "firebase/auth";
-import { useFirebase } from "@/firebase";
 
 export default function UserManagementPage() {
   const { user } = useUser();
-  const { auth } = useFirebase();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,19 +33,29 @@ export default function UserManagementPage() {
   const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
 
   useEffect(() => {
+    if (!user) return; // Wait for user to be loaded
     if (!isSuperAdmin) {
       router.push('/');
       return;
     }
 
     async function fetchUsers() {
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      setLoading(false);
+      try {
+        const allUsers = await getAllUsers();
+        setUsers(allUsers);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load users",
+        });
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchUsers();
-  }, [isSuperAdmin, router]);
+  }, [isSuperAdmin, router, user, toast]);
 
   const handleDeleteUser = async (userToDelete: User) => {
     if (!isSuperAdmin) {
@@ -57,11 +64,8 @@ export default function UserManagementPage() {
     }
     
     try {
-      // This is a complex operation. We need to delete the user from our db,
-      // and also from Firebase Auth. This is a client-side operation and
-      // requires re-authentication for security reasons, which we cannot do here.
-      // So, we will only "soft delete" by removing their data from our firestore db.
-      // The auth user will remain.
+      // This function now only deletes Firestore data and anonymizes the user.
+      // It does not and cannot delete the Firebase Auth user.
       await deleteUserAccount(userToDelete.id);
 
       setUsers(users.filter((u) => u.id !== userToDelete.id));
@@ -72,7 +76,7 @@ export default function UserManagementPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting user",
+        title: "Error Deleting User Data",
         description: error.message,
       });
     }
@@ -120,13 +124,13 @@ export default function UserManagementPage() {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently anonymize the user '{u.name}' and their associated data. It will not delete their authentication record.
+                                    This action cannot be undone. This will permanently anonymize the user '{u.name}' and their associated data. It will not delete their authentication record, and they will still be able to log in.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => handleDeleteUser(u)}>
-                                    Delete User Data
+                                    Anonymize User Data
                                 </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>

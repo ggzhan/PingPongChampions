@@ -5,18 +5,13 @@ import { createContext, useContext, useState, ReactNode, FC, useEffect } from 'r
 import { updateUserInLeagues, getUserById, createUserProfile } from '@/lib/data';
 import { useFirebase } from '@/firebase';
 import type { User as AuthUser } from 'firebase/auth';
+import type { User as AppUser } from '@/lib/types';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  showEmail: boolean;
-}
 
 interface UserContextType {
-  user: User | null;
+  user: AppUser | null;
   authUser: AuthUser | null;
-  updateUser: (newDetails: Partial<User>) => void;
+  updateUser: (newDetails: Partial<AppUser>) => void;
   logout: () => void;
 }
 
@@ -24,7 +19,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { auth } = useFirebase();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -35,7 +30,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
             let userProfile = await getUserById(firebaseUser.uid);
             if (!userProfile) {
                 // This might happen on first login if profile creation was interrupted
-                const newUserProfile: User = {
+                const newUserProfile: AppUser = {
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName || 'New User',
                     email: firebaseUser.email!,
@@ -55,11 +50,12 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [auth]);
 
 
-  const updateUser = async (newDetails: Partial<User>) => {
+  const updateUser = (newDetails: Partial<AppUser>) => {
     if (user) {
         const updatedUser = { ...user, ...newDetails };
         setUser(updatedUser);
-        await updateUserInLeagues(updatedUser as User);
+        // The database update is now handled separately in the profile page
+        // to be paired with the form submission.
     }
   };
 

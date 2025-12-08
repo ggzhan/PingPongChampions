@@ -309,7 +309,7 @@ export async function removePlayerFromLeague(leagueId: string, userId: string): 
 
 export async function updateUserInLeagues(user: User): Promise<void> {
     const userDocRef = doc(db, 'users', user.id);
-    await updateDoc(userDocRef, { ...user }).catch(async (serverError) => {
+    await setDoc(userDocRef, { ...user }, { merge: true }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'update',
@@ -357,15 +357,21 @@ export async function updateUserInLeagues(user: User): Promise<void> {
     });
 }
 
+/**
+ * Anonymizes a user's data across the app and deletes their user profile document.
+ * This does NOT delete their Firebase Auth account.
+ * @param userId The ID of the user to anonymize.
+ */
 export async function deleteUserAccount(userId: string): Promise<void> {
     const userRef = doc(db, 'users', userId);
+    // Delete the main user document.
     await deleteDoc(userRef).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: userRef.path,
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
-        // Do not throw here to allow function to continue
+        // Do not throw here, allow anonymization to continue if possible.
     });
 
   const leagues = await getLeagues();
@@ -376,7 +382,14 @@ export async function deleteUserAccount(userId: string): Promise<void> {
     const newPlayers = league.players.map(player => {
         if (player.id === userId) {
             leagueWasUpdated = true;
-            return { ...player, name: "Deleted User", email: "", showEmail: false, status: 'inactive' as 'inactive' };
+            // Anonymize player data but keep their stats for historical integrity.
+            return { 
+                ...player, 
+                name: "Deleted User", 
+                email: "", 
+                showEmail: false, 
+                status: 'inactive' as 'inactive' 
+            };
         }
         return player;
     });
