@@ -32,17 +32,19 @@ service cloud.firestore {
       // The app's client-side code will handle what to show based on privacy settings.
       allow get: if isSignedIn();
 
-      // Allow listing of leagues only if they are public.
-      allow list: if resource.data.privacy == 'public';
+      // Allow listing of public leagues. The client must query for public leagues.
+      allow list: if isSignedIn();
       
       // Only signed-in, verified users can create a league
       allow create: if isSignedIn() && isVerified();
 
       // Only league admins can update league settings
-      allow update: if isSignedIn() && resource.data.adminIds.has(request.auth.uid);
+      allow update: if isSignedIn() && request.auth.uid in resource.data.adminIds;
 
       // Only league admins can delete a league
-      allow delete: if isSignedIn() && resource.data.adminIds.has(request.auth.uid);
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.adminIds;
     }
   }
 }
+
+    

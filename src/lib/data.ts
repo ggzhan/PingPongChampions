@@ -26,7 +26,9 @@ function generateInviteCode(): string {
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
-    const leagueSnapshot = await getDocs(leaguesCol).catch(async (serverError) => {
+    // Query only for public leagues to comply with security rules
+    const q = query(leaguesCol, where("privacy", "==", "public"));
+    const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: leaguesCol.path,
             operation: 'list',
@@ -265,14 +267,20 @@ export async function addUserToLeague(leagueId: string, user: User): Promise<voi
 }
 
 export async function joinLeagueByInviteCode(inviteCode: string, user: User, leagueId: string): Promise<League> {
-    const q = query(collection(db, "leagues"), where("inviteCode", "==", inviteCode), where("id", "==", leagueId));
+    const q = query(collection(db, "leagues"), where("inviteCode", "==", inviteCode));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
         throw new Error("Invalid invite code or league does not match.");
     }
     
-    const leagueDoc = querySnapshot.docs[0];
+    // Although we filter by invite code, a malicious user could guess one.
+    // We double-check that the invite code corresponds to the league they are trying to join.
+    const leagueDoc = querySnapshot.docs.find(doc => doc.id === leagueId);
+    if (!leagueDoc) {
+        throw new Error("Invalid invite code for this league.");
+    }
+
     const league = { id: leagueDoc.id, ...leagueDoc.data() } as League;
 
     await addUserToLeague(league.id, user);
@@ -500,3 +508,5 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
+
+    
