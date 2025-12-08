@@ -1,0 +1,49 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isVerified() {
+      return request.auth.token.email_verified;
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      // Disallow deletes for now to preserve user history
+      allow delete: if false;
+    }
+
+    // LEAGUES
+    match /leagues/{leagueId} {
+      // Allow any signed-in user to get a specific league document.
+      allow get: if isSignedIn();
+
+      // Allow listing of public leagues. The client must query for public leagues.
+      allow list: if isSignedIn();
+      
+      // Only signed-in, verified users can create a league
+      allow create: if isSignedIn() && isVerified();
+
+      // Only league admins or the super admin can update league settings
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.adminIds || request.auth.token.email == 'markus.koenigreich@gmail.com');
+
+      // Only league admins or the super admin can delete a league
+      allow delete: if isSignedIn() && (request.auth.uid in resource.data.adminIds || request.auth.token.email == 'markus.koenigreich@gmail.com');
+    }
+  }
+}
+
+    
