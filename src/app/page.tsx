@@ -39,7 +39,7 @@ export default function LeaguesPage() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold font-headline">Leagues</h1>
-            <p className="text-muted-foreground mt-2">Compete with friends in your own ping pong league. Free and easy to use.</p>
+            <p className="text-muted-foreground mt-2">Compete with friends in your own ping pong league.</p>
           </div>
            <div className="w-full md:w-64 h-10 bg-muted rounded animate-pulse"></div>
         </div>
@@ -66,7 +66,7 @@ export default function LeaguesPage() {
       <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">Leagues</h1>
-          <p className="text-muted-foreground mt-2">Compete with friends in your own ping pong league. Free and easy to use.</p>
+          <p className="text-muted-foreground mt-2">Compete with friends in your own ping pong league.</p>
         </div>
         <div className="flex w-full md:w-auto md:justify-end gap-2">
             <div className="relative flex-grow md:flex-grow-0 md:w-64">
