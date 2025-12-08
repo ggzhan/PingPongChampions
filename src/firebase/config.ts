@@ -18,19 +18,20 @@ if (!getApps().length) {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// To avoid connecting to the emulator multiple times, we check if the
-// emulators are already running. This is a robust way to connect in dev.
+// Use a try/catch block to gracefully handle environments where emulators are not running.
 try {
-    // @ts-ignore
+    // @ts-ignore - This is a safe way to check for an existing emulator connection.
     if (!auth.emulatorConfig) {
         connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     }
-    // @ts-ignore
+    // @ts-ignore - This is a safe way to check for an existing emulator connection.
     if (!db.emulator) {
         connectFirestoreEmulator(db, '127.0.0.1', 8080);
     }
 } catch (e) {
-    // This can happen in certain environments, we can ignore it.
+    // This can happen in some environments (like production) where emulators are not available.
+    // We can safely ignore this error.
+    console.warn("Could not connect to Firebase emulators. This is expected in production.", e);
 }
 
 
