@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/user-context';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 // Mock auth state
 const useAuth = () => {
@@ -56,8 +57,10 @@ export default function Header() {
             <p className="text-xs text-muted-foreground">Compete with friends in your own ping pong league.</p>
           </div>
         </Link>
-        <div className="flex items-center justify-end gap-4 mt-4 md:mt-0 flex-wrap">
+        <div className="flex items-center justify-end gap-2 mt-4 sm:mt-0 flex-wrap">
           {isLoggedIn && user ? (
+            <>
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="bg-secondary border-transparent hover:shadow-sm focus-visible:ring-0 focus-visible:ring-offset-0">
@@ -92,8 +95,10 @@ export default function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <div className='flex items-center gap-2 flex-wrap justify-end'>
+               <ThemeToggle />
               <Button asChild variant="ghost">
                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
               </Button>
