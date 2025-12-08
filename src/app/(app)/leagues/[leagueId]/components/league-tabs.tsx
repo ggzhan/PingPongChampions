@@ -15,30 +15,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useUser } from '@/context/user-context';
 import { calculateEloChange } from '@/lib/data';
 
-
-const PlayerLink = ({ player }: { player: Player }) => {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="font-bold">{player.name}</span>
-      {player.showEmail && player.email && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
-                    <Mail className="h-4 w-4" />
-                </a>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{player.email}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-    </div>
-  );
-};
-
-
 export default function LeagueTabs({ league }: { league: League }) {
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useUser();
@@ -61,8 +37,8 @@ export default function LeagueTabs({ league }: { league: League }) {
   return (
     <Tabs defaultValue="rankings" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="rankings">Rankings</TabsTrigger>
-        <TabsTrigger value="matches">Matches</TabsTrigger>
+        <TabsTrigger value="rankings" className="py-2.5 text-base">Rankings</TabsTrigger>
+        <TabsTrigger value="matches" className="py-2.5 text-base">Matches</TabsTrigger>
       </TabsList>
       <TabsContent value="rankings">
         <Card>
@@ -103,7 +79,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                             {player.showEmail && player.email && (
                               <TooltipProvider>
                                 <Tooltip>
-                                  <TooltipTrigger>
+                                  <TooltipTrigger asChild>
                                       <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
                                           <Mail className="h-4 w-4" />
                                       </a>
