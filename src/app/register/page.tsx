@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -55,9 +56,6 @@ export default function RegisterPage() {
             </div>
             <Button type="submit" className="w-full">
               Create an account
-            </Button>
-            <Button variant="outline" className="w-full" type="button">
-              Sign up with Google
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
