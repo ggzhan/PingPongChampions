@@ -51,7 +51,10 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center px-4">
         <Link href="/" className="flex items-center gap-2 mr-6">
           <Trophy className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg font-headline">Ping Pong Champions</span>
+          <div>
+            <span className="font-bold text-lg font-headline">Ping Pong Champions</span>
+            <p className="text-xs text-muted-foreground">Compete with friends in your own ping pong league.</p>
+          </div>
         </Link>
         <div className="flex flex-1 items-center justify-end gap-4">
           {isLoggedIn && user ? (
