@@ -175,10 +175,10 @@ export default function PlayerPage() {
                                   <TableCell className={`text-center font-semibold ${didWin ? 'text-green-500' : 'text-red-500'}`}>
                                     {didWin ? "Win" : "Loss"}
                                   </TableCell>
-                                  <TableCell className="text-center font-mono">
+                                  <TableCell className="text-center font-mono whitespace-nowrap">
                                     {playerScore} - {opponentScore}
                                   </TableCell>
-                                   <TableCell className="text-right font-mono text-xs">
+                                   <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                                      <span className={eloChange >= 0 ? 'font-bold text-green-500' : 'font-bold text-red-500'}>
                                         {eloChange >= 0 ? `+${eloChange}`: eloChange}
                                      </span>

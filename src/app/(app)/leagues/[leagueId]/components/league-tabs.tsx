@@ -173,10 +173,10 @@ export default function LeagueTabs({ league }: { league: League }) {
                                         <span>{loser}</span>
                                       </div>
                                     </TableCell>
-                                    <TableCell className="text-center font-mono font-semibold">
+                                    <TableCell className="text-center font-mono font-semibold whitespace-nowrap">
                                       {winnerScore} - {loserScore}
                                     </TableCell>
-                                     <TableCell className="text-right font-mono text-xs">
+                                     <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                                        <div>
                                         <span className="font-bold text-green-500">+{winnerEloChange}</span>
                                         <span className="text-muted-foreground"> / </span>
