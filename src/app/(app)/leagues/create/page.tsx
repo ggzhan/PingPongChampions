@@ -75,8 +75,9 @@ export default function CreateLeaguePage() {
           name: values.name,
           description: values.description || '',
           privacy: values.privacy,
-          leaderboardVisible: values.leaderboardVisible,
-          adminIds: [user.id],
+          // For public leagues, leaderboard is always visible
+          leaderboardVisible: values.privacy === 'public' ? true : values.leaderboardVisible,
+          adminIds: [], // This is now handled by the createLeague function
           creator: user,
       });
       toast({
@@ -215,3 +216,5 @@ export default function CreateLeaguePage() {
     </div>
   );
 }
+
+    

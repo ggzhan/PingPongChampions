@@ -69,7 +69,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
 }
 
 export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'> & { creator: User }): Promise<League> {
-    const { creator, ...restOfLeagueData } = leagueData;
+    const { creator, adminIds, ...restOfLeagueData } = leagueData;
     
     const newPlayer: Player = {
         id: creator.id,
@@ -85,6 +85,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
 
     const newLeagueData = {
         ...restOfLeagueData,
+        adminIds: [creator.id], // Always make the creator an admin
         inviteCode: leagueData.privacy === 'private' ? generateInviteCode() : null,
         players: [newPlayer],
         matches: [],
@@ -509,3 +510,5 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
+
+    
