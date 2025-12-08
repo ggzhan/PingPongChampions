@@ -14,6 +14,7 @@ import {
   where,
   serverTimestamp,
   setDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
@@ -42,10 +43,23 @@ export async function getLeagues(): Promise<League[]> {
 
     const leagues = leagueSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as League));
     
-    const result = leagues.map(league => ({
-        ...league,
-        activePlayerCount: league.players.filter(p => p.status === 'active').length
-    }));
+    const result = leagues.map(league => {
+        let lastActivityDate: Date;
+        const leagueCreationDate = league.createdAt instanceof Timestamp ? league.createdAt.toDate() : new Date(league.createdAt);
+
+        if (league.matches && league.matches.length > 0) {
+            const lastMatchDate = new Date(Math.max(...league.matches.map(m => new Date(m.createdAt).getTime())));
+            lastActivityDate = lastMatchDate > leagueCreationDate ? lastMatchDate : leagueCreationDate;
+        } else {
+            lastActivityDate = leagueCreationDate;
+        }
+        
+        return {
+            ...league,
+            activePlayerCount: league.players.filter(p => p.status === 'active').length,
+            lastActivity: lastActivityDate.toISOString(),
+        }
+    });
 
     result.sort((a,b) => a.name.localeCompare(b.name));
     return result;
@@ -359,50 +373,52 @@ export async function updateUserInLeagues(user: User): Promise<void> {
 
 /**
  * Anonymizes a user's data across all leagues and deletes their main user document.
- * This does NOT delete their Firebase Auth account. That must be done by the user.
  * @param userId The ID of the user to anonymize and delete.
  */
 export async function deleteUserAccount(userId: string): Promise<void> {
-  // First, anonymize the user's name in all leagues where they played.
-  const leagues = await getLeagues();
-  const batch = writeBatch(db);
+    // Get all leagues to update them.
+    const leagues = await getLeagues();
+    const batch = writeBatch(db);
 
-  leagues.forEach(league => {
-    let leagueWasUpdated = false;
-    const newPlayers = league.players.map(player => {
-        if (player.id === userId) {
-            leagueWasUpdated = true;
-            // Anonymize player data but keep their stats for historical integrity.
-            return { 
-                ...player, 
-                name: "Deleted User", 
-                email: "", 
-                showEmail: false, 
-                status: 'inactive' as 'inactive' 
-            };
+    leagues.forEach(league => {
+        let leagueWasUpdated = false;
+        
+        // Anonymize player in the players list
+        const newPlayers = league.players.map(player => {
+            if (player.id === userId) {
+                leagueWasUpdated = true;
+                return {
+                    ...player,
+                    name: "Deleted User",
+                    email: "",
+                    showEmail: false,
+                    status: 'inactive' as 'inactive'
+                };
+            }
+            return player;
+        });
+
+        // Anonymize player name in match history
+        const newMatches = (league.matches || []).map(match => {
+            if (match.playerAId === userId) {
+                match.playerAName = "Deleted User";
+                leagueWasUpdated = true;
+            }
+            if (match.playerBId === userId) {
+                match.playerBName = "Deleted User";
+                leagueWasUpdated = true;
+            }
+            return match;
+        });
+
+        if (leagueWasUpdated) {
+            const leagueRef = doc(db, 'leagues', league.id);
+            batch.update(leagueRef, { players: newPlayers, matches: newMatches });
         }
-        return player;
     });
 
-    const newMatches = (league.matches || []).map(match => {
-      if (match.playerAId === userId) {
-        match.playerAName = "Deleted User";
-        leagueWasUpdated = true;
-      }
-      if (match.playerBId === userId) {
-        match.playerBName = "Deleted User";
-        leagueWasUpdated = true;
-      }
-      return match;
-    });
-
-     if(leagueWasUpdated) {
-        const leagueRef = doc(db, 'leagues', league.id);
-        batch.update(leagueRef, { players: newPlayers, matches: newMatches });
-    }
-  });
-
-  await batch.commit().catch(async (serverError) => {
+    // Commit the batch of league updates.
+    await batch.commit().catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: "batch write for user deletion cleanup",
             operation: 'update',

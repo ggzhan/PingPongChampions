@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Trophy, User, LogOut, LogIn, UserPlus, Shield } from 'lucide-react';
+import { Trophy, User, LogOut, LogIn, UserPlus, Shield, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -56,9 +56,14 @@ export default function Header() {
                   <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
                 </DropdownMenuItem>
                  {isSuperAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/users"><Shield className="mr-2 h-4 w-4" />User Management</Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/users"><Shield className="mr-2 h-4 w-4" />User Management</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/leagues"><Swords className="mr-2 h-4 w-4" />League Management</Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

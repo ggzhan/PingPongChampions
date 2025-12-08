@@ -43,6 +43,7 @@ export type League = {
   matches: Match[];
   activePlayerCount?: number;
   createdAt: Timestamp | string;
+  lastActivity?: string;
 };
 
 export type EloHistory = {
