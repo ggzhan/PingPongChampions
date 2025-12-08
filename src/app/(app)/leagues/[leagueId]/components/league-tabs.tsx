@@ -15,22 +15,17 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
-  const hasPlayed = player.wins > 0 || player.losses > 0;
   const content = (
     <div className="flex items-center gap-3">
       <span className="font-medium">{player.name}</span>
     </div>
   );
 
-  if (hasPlayed) {
-    return (
-      <Link href={`/leagues/${leagueId}/players/${player.id}`} className="hover:underline">
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
+  return (
+    <Link href={`/leagues/${leagueId}/players/${player.id}`} className="hover:underline">
+      {content}
+    </Link>
+  );
 };
 
 
