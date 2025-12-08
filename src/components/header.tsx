@@ -57,7 +57,7 @@ export default function Header() {
           {isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" className="hover:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0">
                   <User className="mr-2 h-4 w-4" />
                   <span>{user.name}</span>
                 </Button>
