@@ -56,7 +56,7 @@ export default function Header() {
             <p className="text-xs text-muted-foreground">Compete with friends in your own ping pong league.</p>
           </div>
         </Link>
-        <div className="flex flex-1 items-center justify-end gap-4">
+        <div className="flex flex-1 items-center justify-end gap-4 flex-wrap">
           {isLoggedIn && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -93,7 +93,7 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 flex-wrap justify-end'>
               <Button asChild variant="ghost">
                 <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
               </Button>
