@@ -19,7 +19,7 @@ function generateInviteCode(): string {
 
 if (!g.dataStore) {
   const initialUsers: User[] = [
-    { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false },
+    { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: true },
     { id: 'user-2', name: 'Bob', email: 'bob@example.com', showEmail: false },
     { id: 'user-3', name: 'Charlie', email: 'charlie@example.com', showEmail: false },
     { id: 'user-4', name: 'Diana', email: 'diana@example.com', showEmail: false },
@@ -73,7 +73,7 @@ if (!g.dataStore) {
       privacy: 'public',
       adminIds: ['user-1'],
       players: [
-        { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: false, elo: 1016, wins: 1, losses: 0, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+        { id: 'user-1', name: 'AlpacaRacer', email: 'john.doe@example.com', showEmail: true, elo: 1016, wins: 1, losses: 0, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
         { ...initialPlayers[1], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
         { ...initialPlayers[2], elo: 984, wins: 0, losses: 1, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
         { ...initialPlayers[3], elo: 1016, wins: 1, losses: 0, showEmail: false, status: 'active', createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
@@ -104,10 +104,14 @@ if (!g.dataStore) {
 export async function getLeagues(): Promise<League[]> {
   // Create a deep copy to avoid mutations affecting the original data store
   const leagues = JSON.parse(JSON.stringify(g.dataStore.leagues));
-  return Promise.resolve(leagues.map(league => ({
+  const result = leagues.map(league => ({
     ...league,
     activePlayerCount: league.players.filter(p => p.status === 'active').length
-  })));
+  }));
+
+  // Sort by name
+  result.sort((a,b) => a.name.localeCompare(b.name));
+  return Promise.resolve(result);
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
@@ -348,8 +352,10 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   return Promise.resolve();
 }
 
-function calculateEloChange(playerElo: number, opponentElo: number, result: 'win' | 'loss'): number {
-  const K = 32; // K-factor determines how much the ELO rating is updated
+function calculateEloChange(playerElo: number, opponentElo: number, playerMatchesPlayed: number, result: 'win' | 'loss'): number {
+  // K-factor is higher for new players to allow their ELO to change more quickly.
+  // It stabilizes as they play more matches.
+  const K = playerMatchesPlayed < 30 ? 40 : 20;
   const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
   const actualScore = result === 'win' ? 1 : 0;
   return Math.round(K * (actualScore - expectedScore));
@@ -378,8 +384,11 @@ export async function recordMatch(
     throw new Error('One or both players not found in the league');
   }
 
-  const eloChangeA = calculateEloChange(playerA.elo, playerB.elo, formData.winnerId === playerA.id ? 'win' : 'loss');
-  const eloChangeB = calculateEloChange(playerB.elo, playerA.elo, formData.winnerId === playerB.id ? 'win' : 'loss');
+  const playerAMatchesPlayed = playerA.wins + playerA.losses;
+  const playerBMatchesPlayed = playerB.wins + playerB.losses;
+
+  const eloChangeA = calculateEloChange(playerA.elo, playerB.elo, playerAMatchesPlayed, formData.winnerId === playerA.id ? 'win' : 'loss');
+  const eloChangeB = calculateEloChange(playerB.elo, playerA.elo, playerBMatchesPlayed, formData.winnerId === playerB.id ? 'win' : 'loss');
 
   // Update player stats
   playerA.elo += eloChangeA;
