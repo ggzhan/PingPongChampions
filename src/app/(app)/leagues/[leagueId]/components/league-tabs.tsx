@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy } from "lucide-react";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const PlayerLink = ({ leagueId, player }: { leagueId: string, player: Player }) => {
   const content = (
     <div className="flex items-center gap-3">
-      <span className="font-medium">{player.name}</span>
+      <span className="font-bold">{player.name}</span>
     </div>
   );
 
@@ -33,20 +33,18 @@ export default function LeagueTabs({ league }: { league: League }) {
   const [searchTerm, setSearchTerm] = useState('');
   
   const activePlayers = league.players.filter(p => p.status === 'active');
-
-  const playersWithMatchCount = activePlayers.map(player => ({
-      ...player,
-      matchesPlayed: (league.matches || []).filter(m => m.playerAId === player.id || m.playerBId === player.id).length
-  }));
-
-  const sortedPlayersByRank = [...activePlayers].sort((a, b) => b.elo - a.elo);
-  const sortedPlayersByMatches = [...playersWithMatchCount].sort((a,b) => b.matchesPlayed - a.matchesPlayed);
-
-  const filteredPlayers = sortedPlayersByMatches.filter(player => 
-    player.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const playersWithTrend = activePlayers.map(player => {
+      const lastMatch = sortedMatches.find(m => m.playerAId === player.id || m.playerBId === player.id);
+      let trend: 'up' | 'down' | 'neutral' = 'neutral';
+      if (lastMatch) {
+          trend = lastMatch.winnerId === player.id ? 'up' : 'down';
+      }
+      return { ...player, trend };
+  });
+
+  const sortedPlayersByRank = [...playersWithTrend].sort((a, b) => b.elo - a.elo);
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
@@ -63,21 +61,33 @@ export default function LeagueTabs({ league }: { league: League }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Rank</TableHead>
+                  <TableHead className="w-[60px]">Rank</TableHead>
                   <TableHead>Player</TableHead>
                   <TableHead className="text-right">ELO</TableHead>
-                  <TableHead className="text-right">W/L</TableHead>
+                  <TableHead className="text-center w-[80px]">W/L</TableHead>
+                  <TableHead className="text-center w-[80px]">Trend</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedPlayersByRank.map((player, index) => (
                   <TableRow key={player.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell className="font-medium text-center">{index + 1}</TableCell>
                     <TableCell>
                       <PlayerLink leagueId={league.id} player={player} />
                     </TableCell>
                     <TableCell className="text-right font-mono">{player.elo}</TableCell>
-                    <TableCell className="text-right">{player.wins}/{player.losses}</TableCell>
+                    <TableCell className="text-center">
+                        <span className="text-green-500 font-semibold">{player.wins}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span className="text-red-500 font-semibold">{player.losses}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                        <div className="flex justify-center">
+                            {player.trend === 'up' && <ArrowUp className="h-5 w-5 text-green-500" />}
+                            {player.trend === 'down' && <ArrowDown className="h-5 w-5 text-red-500" />}
+                            {player.trend === 'neutral' && <Minus className="h-5 w-5 text-muted-foreground" />}
+                        </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
