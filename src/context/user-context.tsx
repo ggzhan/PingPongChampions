@@ -13,6 +13,7 @@ import { useApp } from './app-context';
 interface UserContextType {
   user: AppUser | null;
   authUser: AuthUser | null;
+  loading: boolean;
   updateUser: (newDetails: Partial<AppUser>) => void;
   logout: () => void;
 }
@@ -23,21 +24,27 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { auth } = useFirebase();
   const [user, setUser] = useState<AppUser | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true); // Add loading state
   const router = useRouter();
   const app = useApp();
 
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+        // Firebase might not be initialized on first render pass
+        // We'll rely on the auth state change to trigger updates.
+        // Set loading to false if not in a browser environment.
+        if (typeof window === 'undefined') setLoading(false);
+        return;
+    }
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
         if (firebaseUser && firebaseUser.emailVerified) {
             setAuthUser(firebaseUser);
             let userProfile = await getUserById(firebaseUser.uid);
             if (!userProfile) {
-                // This might happen on first login if profile creation was interrupted
                 const newUserProfile: AppUser = {
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName || 'New User',
-                    email: user.email,
+                    email: firebaseUser.email!,
                     showEmail: true
                 };
                 await createUserProfile(newUserProfile);
@@ -48,6 +55,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
             setAuthUser(null);
             setUser(null);
         }
+        setLoading(false); // Set loading to false after user is processed
     });
 
     return () => unsubscribe();
@@ -74,7 +82,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }
 
   return (
-    <UserContext.Provider value={{ user, authUser, updateUser, logout }}>
+    <UserContext.Provider value={{ user, authUser, loading, updateUser, logout }}>
       {children}
     </UserContext.Provider>
   );

@@ -34,7 +34,7 @@ export default function LeaguePage() {
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
-  const { user } = useUser();
+  const { user, authUser, loading: userLoading } = useUser(); // Get loading state
   const router = useRouter();
   const { toast } = useToast();
 
@@ -47,7 +47,6 @@ export default function LeaguePage() {
       if (leagueData) {
         setLeague(leagueData);
       } else {
-        // This case will be hit for logged-out users on private leagues
         setLeague(null);
         setFetchError(true);
       }
@@ -61,10 +60,13 @@ export default function LeaguePage() {
   }, [leagueId]);
 
   useEffect(() => {
-    fetchLeague();
-  }, [fetchLeague, user]); // Re-fetch when user logs in/out
+    // Wait until the user loading state is resolved before fetching
+    if (!userLoading) {
+      fetchLeague();
+    }
+  }, [fetchLeague, userLoading]);
   
-  if (loading) {
+  if (loading || userLoading) {
     return <div>Loading...</div>; // Or a skeleton loader
   }
   
