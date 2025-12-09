@@ -29,8 +29,6 @@ function generateInviteCode(): string {
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
     
-    // Always query all leagues. Security rules will enforce what the user can see.
-    // For list, we've set it to `true` so everyone can see all leagues on the homepage.
     const q = query(leaguesCol);
     
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
@@ -39,7 +37,6 @@ export async function getLeagues(): Promise<League[]> {
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
-        // Return null to indicate failure, which will result in an empty array below.
         return null;
     });
 
