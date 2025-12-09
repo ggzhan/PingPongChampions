@@ -231,7 +231,7 @@ export default function RecordMatchPage() {
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="-" />
-                            </Trigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {scoreOptions.map(score => (
