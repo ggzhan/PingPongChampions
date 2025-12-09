@@ -3,9 +3,9 @@
 
 import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
 import { notFound, useRouter, useParams } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, UserPlus, LogOut, Globe, Lock, EyeOff, PlusCircle } from "lucide-react";
+import { Settings, UserPlus, LogOut, Globe, Lock, EyeOff, PlusCircle, LogIn, ShieldQuestion } from "lucide-react";
 import LeagueTabs from "./components/league-tabs";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect, useCallback } from "react";
@@ -33,6 +33,7 @@ export default function LeaguePage() {
   const leagueId = params.leagueId as string;
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -40,12 +41,20 @@ export default function LeaguePage() {
   const fetchLeague = useCallback(async () => {
     if (!leagueId) return;
     setLoading(true);
+    setFetchError(false);
     try {
       const leagueData = await getLeagueById(leagueId);
-      setLeague(leagueData);
+      if (leagueData) {
+        setLeague(leagueData);
+      } else {
+        // This case will be hit for logged-out users on private leagues
+        setLeague(null);
+        setFetchError(true);
+      }
     } catch (error) {
       console.error("Failed to fetch league:", error);
       setLeague(null);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -53,10 +62,35 @@ export default function LeaguePage() {
 
   useEffect(() => {
     fetchLeague();
-  }, [fetchLeague]);
+  }, [fetchLeague, user]); // Re-fetch when user logs in/out
   
   if (loading) {
     return <div>Loading...</div>; // Or a skeleton loader
+  }
+  
+  // Special case for logged-out users trying to access a page they can't see
+  if (!user && (fetchError || !league)) {
+     return (
+       <Card className="text-center p-8">
+        <CardHeader>
+          <div className="mx-auto bg-muted rounded-full h-16 w-16 flex items-center justify-center">
+            <ShieldQuestion className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle className="mt-4">Access Restricted</CardTitle>
+          <CardDescription>You need to be logged in to view the details of this league.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center gap-4">
+            <Button asChild>
+              <Link href="/login"><LogIn className="mr-2 h-4 w-4"/>Login</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/register"><UserPlus className="mr-2 h-4 w-4"/>Sign Up</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+     );
   }
 
   if (!league) {
