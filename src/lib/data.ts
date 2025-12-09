@@ -28,22 +28,18 @@ function generateInviteCode(): string {
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
-    const user = auth.currentUser;
     
-    // If user is not logged in, only fetch public leagues.
-    // Otherwise, fetch all and let security rules handle filtering for private ones.
-    const q = user ? query(leaguesCol) : query(leaguesCol, where("privacy", "==", "public"));
+    // Always query all leagues. Security rules will enforce what the user can see.
+    // For list, we've set it to `true` so everyone can see all leagues on the homepage.
+    const q = query(leaguesCol);
     
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
-        // Avoid showing permission errors for non-logged-in users on the homepage.
-        // It's expected they can't see all leagues.
-        if (user) {
-            const permissionError = new FirestorePermissionError({
-                path: leaguesCol.path,
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
+        const permissionError = new FirestorePermissionError({
+            path: leaguesCol.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        // Return null to indicate failure, which will result in an empty array below.
         return null;
     });
 
