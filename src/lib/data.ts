@@ -45,11 +45,19 @@ export async function getLeagues(): Promise<League[]> {
 
     if (!leagueSnapshot) return [];
 
-    const leagues = leagueSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as League));
+    const leagues = leagueSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id, 
+            ...data,
+            // Ensure createdAt is a string
+            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        } as League;
+    });
     
     const result = leagues.map(league => {
         let lastActivityDate: Date;
-        const leagueCreationDate = league.createdAt instanceof Timestamp ? league.createdAt.toDate() : new Date(league.createdAt as string);
+        const leagueCreationDate = new Date(league.createdAt as string);
 
         if (league.matches && league.matches.length > 0) {
             const lastMatchDate = new Date(Math.max(...league.matches.map(m => new Date(m.createdAt).getTime())));
@@ -90,7 +98,13 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
     if (!leagueDoc || !leagueDoc.exists()) {
         return undefined;
     }
-    return { id: leagueDoc.id, ...leagueDoc.data() } as League;
+    const data = leagueDoc.data();
+    return { 
+        id: leagueDoc.id, 
+        ...data,
+        // Ensure createdAt is a string
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+    } as League;
 }
 
 export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'> & { creator: User }): Promise<League> {
