@@ -46,7 +46,7 @@ const accountFormSchema = z.object({
     message: "Username must be at least 2 characters.",
   }),
   email: z.string().email(),
-  showEmail: z.boolean().default(false),
+  showEmail: z.boolean().default(true),
 });
 
 type AccountFormValues = z.infer<typeof accountFormSchema>;
@@ -97,7 +97,7 @@ export default function ProfilePage() {
         defaultValues: {
             name: '',
             email: '',
-            showEmail: false,
+            showEmail: true,
         },
     });
 

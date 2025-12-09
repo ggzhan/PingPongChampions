@@ -30,7 +30,6 @@ export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
     
     // Always query all leagues. Security rules will enforce what the user can see.
-    // For list, we've set it to `true` so everyone can see all leagues on the homepage.
     const q = query(leaguesCol);
     
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
@@ -50,14 +49,15 @@ export async function getLeagues(): Promise<League[]> {
         return { 
             id: doc.id, 
             ...data,
-            // Ensure createdAt is a string
+            // Ensure createdAt is a string and handle server timestamps
             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
         } as League;
     });
     
     const result = leagues.map(league => {
         let lastActivityDate: Date;
-        const leagueCreationDate = new Date(league.createdAt as string);
+        // league.createdAt could be a string or a Timestamp pending from the server, handle both.
+        const leagueCreationDate = league.createdAt ? (typeof league.createdAt === 'string' ? new Date(league.createdAt) : (league.createdAt as Timestamp).toDate()) : new Date();
 
         if (league.matches && league.matches.length > 0) {
             const lastMatchDate = new Date(Math.max(...league.matches.map(m => new Date(m.createdAt).getTime())));
@@ -70,6 +70,7 @@ export async function getLeagues(): Promise<League[]> {
             ...league,
             activePlayerCount: league.players.filter(p => p.status === 'active').length,
             lastActivity: lastActivityDate.toISOString(),
+            createdAt: leagueCreationDate.toISOString(),
         }
     });
 
@@ -114,7 +115,7 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
         id: creator.id,
         name: creator.name,
         email: creator.email,
-        showEmail: !!creator.showEmail,
+        showEmail: creator.showEmail ?? true,
         elo: 1000,
         wins: 0,
         losses: 0,
@@ -289,7 +290,7 @@ export async function addUserToLeague(leagueId: string, user: User): Promise<voi
         wins: 0,
         losses: 0,
         status: 'active',
-        showEmail: !!user.showEmail,
+        showEmail: user.showEmail ?? true,
         createdAt: new Date().toISOString(),
       };
       newPlayers = [...(league.players || []), newPlayer];
@@ -568,7 +569,7 @@ export async function createUserProfile(user: User): Promise<void> {
         id: user.id,
         name: user.name,
         email: user.email,
-        showEmail: user.showEmail ?? false,
+        showEmail: user.showEmail ?? true,
     };
     await setDoc(userDocRef, data, { merge: true }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({

@@ -43,7 +43,7 @@ export default function RegisterPage() {
             id: user.uid,
             name: username,
             email: user.email!,
-            showEmail: false,
+            showEmail: true,
         });
 
         toast({

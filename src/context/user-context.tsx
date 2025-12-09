@@ -38,7 +38,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName || 'New User',
                     email: user.email,
-                    showEmail: false
+                    showEmail: true
                 };
                 await createUserProfile(newUserProfile);
                 userProfile = newUserProfile;
