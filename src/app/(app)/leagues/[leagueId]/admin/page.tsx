@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Switch } from "@/components/ui/switch";
+import { useApp } from "@/context/app-context";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -59,6 +60,7 @@ export default function LeagueAdminPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
+  const { refresh } = useApp();
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState<string | undefined>("");
@@ -120,8 +122,8 @@ export default function LeagueAdminPage() {
         title: "League Updated!",
         description: `Your league settings have been saved.`,
       });
+      refresh(); // Refresh global league state
       router.push(`/leagues/${league.id}`);
-      router.refresh();
     } catch (error) {
        toast({
         variant: "destructive",
@@ -152,8 +154,8 @@ export default function LeagueAdminPage() {
         title: "League Deleted",
         description: `The league "${league.name}" has been permanently deleted.`,
       });
+      refresh(); // Refresh global league state to update homepage
       router.push('/');
-      router.refresh();
     } catch (error) {
         toast({
             variant: "destructive",

@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useApp } from "@/context/app-context";
 
 export default function LeagueManagementPage() {
   const { user } = useUser();
@@ -30,6 +31,7 @@ export default function LeagueManagementPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { refresh } = useApp();
 
   const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
 
@@ -66,12 +68,14 @@ export default function LeagueManagementPage() {
     
     try {
       await deleteLeague(leagueToDelete.id);
+      // Immediately update the local state for a responsive UI
       setLeagues(leagues.filter((l) => l.id !== leagueToDelete.id));
+      // Trigger a global refresh to ensure other parts of the app are up-to-date
+      refresh();
       toast({
         title: "League Deleted",
         description: `The league "${leagueToDelete.name}" has been permanently deleted.`,
       });
-      // No router.push, just stay on the page and let the state update re-render the list.
     } catch (error: any) {
       toast({
         variant: "destructive",
