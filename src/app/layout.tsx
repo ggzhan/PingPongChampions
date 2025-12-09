@@ -37,21 +37,21 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AppProvider>
-            <FirebaseProvider>
-                <UserProvider>
-                  <FirebaseErrorListener />
-                  <div className="flex flex-col min-h-screen">
-                    {!noHeaderFooter && <Header />}
-                    <main className="flex-grow">
-                      {noHeaderFooter ? children : <div className="container mx-auto px-4 py-8">{children}</div>}
-                    </main>
-                    {!noHeaderFooter && <Footer />}
-                  </div>
-                  <Toaster />
-                </UserProvider>
-            </FirebaseProvider>
-          </AppProvider>
+          <FirebaseProvider>
+            <AppProvider>
+              <UserProvider>
+                <FirebaseErrorListener />
+                <div className="flex flex-col min-h-screen">
+                  {!noHeaderFooter && <Header />}
+                  <main className="flex-grow">
+                    {noHeaderFooter ? children : <div className="container mx-auto px-4 py-8">{children}</div>}
+                  </main>
+                  {!noHeaderFooter && <Footer />}
+                </div>
+                <Toaster />
+              </UserProvider>
+            </AppProvider>
+          </FirebaseProvider>
         </ThemeProvider>
       </body>
     </html>

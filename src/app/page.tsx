@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, KeyRound, Globe, Lock, Search } from "lucide-react";
-import { getLeagues } from "@/lib/data";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { League } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/context/user-context";
+import { useApp } from "@/context/app-context";
 
 const LeagueCard = ({ league }: { league: League }) => (
   <Card key={league.id} className="flex flex-col hover:shadow-lg transition-shadow">
@@ -48,19 +48,9 @@ const LeagueGrid = ({ leagues }: { leagues: League[] }) => {
 
 
 export default function LeaguesPage() {
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { leagues, leaguesLoading } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
-
-  useEffect(() => {
-    async function fetchLeagues() {
-      const allLeagues = await getLeagues();
-      setLeagues(allLeagues);
-      setLoading(false);
-    }
-    fetchLeagues();
-  }, []);
   
   const { myLeagues, otherLeagues } = useMemo(() => {
     const filtered = leagues.filter(league => 
@@ -68,6 +58,7 @@ export default function LeaguesPage() {
     );
     
     if (!user) {
+        // For logged-out users, all visible leagues are "other" leagues
         return { myLeagues: [], otherLeagues: filtered };
     }
 
@@ -82,7 +73,7 @@ export default function LeaguesPage() {
   }, [leagues, user, searchTerm]);
 
 
-  if (loading) {
+  if (leaguesLoading) {
     return (
       <div>
         <div className="space-y-4 mb-6">

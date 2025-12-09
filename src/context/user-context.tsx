@@ -7,6 +7,7 @@ import { useFirebase } from '@/firebase';
 import type { User as AuthUser } from 'firebase/auth';
 import type { User as AppUser } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { useApp } from './app-context';
 
 
 interface UserContextType {
@@ -23,6 +24,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const router = useRouter();
+  const app = useApp();
 
   useEffect(() => {
     if (!auth) return;
@@ -67,8 +69,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
     setUser(null);
     setAuthUser(null);
-    router.push('/');
-    router.refresh(); // Force a hard refresh to clear all state.
+    app.refresh(); // Refresh app data
+    router.push('/'); // Navigate to home
   }
 
   return (

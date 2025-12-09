@@ -1,27 +1,42 @@
 
 "use client";
 
-import { createContext, useContext, useState, ReactNode, FC, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, FC, useCallback, useEffect } from 'react';
+import type { League } from '@/lib/types';
+import { getLeagues } from '@/lib/data';
 
 interface AppContextType {
-  appKey: number;
+  leagues: League[];
+  leaguesLoading: boolean;
   refresh: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [appKey, setAppKey] = useState(0);
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [leaguesLoading, setLeaguesLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setAppKey(prevKey => prevKey + 1);
+  const refresh = useCallback(async () => {
+    setLeaguesLoading(true);
+    try {
+        const allLeagues = await getLeagues();
+        setLeagues(allLeagues);
+    } catch (error) {
+        console.error("Failed to refresh leagues:", error);
+        setLeagues([]); // Reset on error
+    } finally {
+        setLeaguesLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   return (
-    <AppContext.Provider value={{ appKey, refresh }}>
-      <div key={appKey}>
+    <AppContext.Provider value={{ leagues, leaguesLoading, refresh }}>
         {children}
-      </div>
     </AppContext.Provider>
   );
 };
