@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus, TrendingUp, TrendingDown, Trash2, Shield } from "lucide-react";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
 import Link from 'next/link';
 import {
@@ -94,6 +94,7 @@ export default function LeagueTabs({ league }: { league: League }) {
               </TableHeader>
               <TableBody>
                 {sortedPlayersByRank.map((player, index) => {
+                  const isAdmin = league.adminIds.includes(player.id);
                   let potentialEloChange: { win: number; loss: number; } | null = null;
 
                   if (currentUserPlayer && player.id !== currentUserPlayer.id) {
@@ -111,6 +112,18 @@ export default function LeagueTabs({ league }: { league: League }) {
                             <Link href={`/leagues/${league.id}/players/${player.id}`} className="font-bold hover:underline">
                               {player.name}
                             </Link>
+                             {isAdmin && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                    <TooltipTrigger>
+                                        <Shield className="h-4 w-4 text-primary" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>League Administrator</p>
+                                    </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
                             {player.showEmail && player.email && (
                               <TooltipProvider>
                                 <Tooltip>
@@ -219,7 +232,7 @@ export default function LeagueTabs({ league }: { league: League }) {
                                      <TableCell className="text-right font-mono text-xs whitespace-nowrap">
                                        <div>
                                         <span className="font-bold text-green-500">+{winnerEloChange}</span>
-                                        <span className="text-muted-foreground"> / </span>
+                                        <span className="text-muted-foreground"> / </span> 
                                         <span className="font-bold text-red-500">{loserEloChange}</span>
                                        </div>
                                     </TableCell>
@@ -269,3 +282,5 @@ export default function LeagueTabs({ league }: { league: League }) {
     </Tabs>
   );
 }
+
+    
