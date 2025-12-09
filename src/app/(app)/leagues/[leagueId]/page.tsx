@@ -73,11 +73,11 @@ export default function LeaguePage() {
      return (
        <Card className="text-center p-8">
         <CardHeader>
-          <div className="mx-auto bg-muted rounded-full h-16 w-16 flex items-center justify-center">
+           <div className="mx-auto bg-muted rounded-full h-16 w-16 flex items-center justify-center">
             <ShieldQuestion className="h-8 w-8 text-muted-foreground" />
           </div>
-          <CardTitle className="mt-4">Access Restricted</CardTitle>
-          <CardDescription>You need to be logged in to view the details of this league.</CardDescription>
+          <CardTitle className="mt-4">Do you want to join this league?</CardTitle>
+          <CardDescription>You need to be logged in or to register if you don't have an account yet.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center gap-4">

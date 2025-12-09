@@ -29,6 +29,8 @@ function generateInviteCode(): string {
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
     
+    // Always query all leagues. Security rules will enforce what the user can see.
+    // For list, we've set it to `true` so everyone can see all leagues on the homepage.
     const q = query(leaguesCol);
     
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
@@ -37,6 +39,7 @@ export async function getLeagues(): Promise<League[]> {
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
+        // Return null to indicate failure, which will result in an empty array below.
         return null;
     });
 
@@ -68,6 +71,13 @@ export async function getLeagues(): Promise<League[]> {
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
     const leagueDocRef = doc(db, 'leagues', id);
+
+    // If user is not logged in, don't even try to fetch, because it will fail due to security rules.
+    // This prevents the "permission-denied" toast from showing to visitors.
+    if (!auth.currentUser) {
+        return undefined;
+    }
+    
     const leagueDoc = await getDoc(leagueDocRef).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: leagueDocRef.path,
