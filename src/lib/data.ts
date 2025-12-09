@@ -30,15 +30,19 @@ export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
     
     // Always query all leagues. Security rules will enforce what the user can see.
+    // For list, we've set it to `true` so everyone can see all leagues on the homepage.
     const q = query(leaguesCol);
     
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: leaguesCol.path,
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // Return null to indicate failure, which will result in an empty array below.
+        // We only want to throw a permission error if a user is logged in.
+        // For logged-out users, a failure is expected for private leagues and shouldn't be an "error".
+        if (auth.currentUser) {
+            const permissionError = new FirestorePermissionError({
+                path: leaguesCol.path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
         return null;
     });
 
@@ -51,13 +55,15 @@ export async function getLeagues(): Promise<League[]> {
             ...data,
             // Ensure createdAt is a string and handle server timestamps
             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+            // Ensure matches is always an array
+            matches: data.matches || [],
         } as League;
     });
     
     const result = leagues.map(league => {
         let lastActivityDate: Date;
         // league.createdAt could be a string or a Timestamp pending from the server, handle both.
-        const leagueCreationDate = league.createdAt ? (typeof league.createdAt === 'string' ? new Date(league.createdAt) : (league.createdAt as Timestamp).toDate()) : new Date();
+        const leagueCreationDate = league.createdAt ? (typeof league.createdAt === 'string' ? new Date(league.createdAt) : (league.createdAt as unknown as Timestamp).toDate()) : new Date();
 
         if (league.matches && league.matches.length > 0) {
             const lastMatchDate = new Date(Math.max(...league.matches.map(m => new Date(m.createdAt).getTime())));
@@ -81,9 +87,15 @@ export async function getLeagues(): Promise<League[]> {
 export async function getLeagueById(id: string): Promise<League | undefined> {
     const leagueDocRef = doc(db, 'leagues', id);
 
-    // If user is not logged in, don't even try to fetch, because it will fail due to security rules.
-    // This prevents the "permission-denied" toast from showing to visitors.
+    // If user is not logged in, don't even try to fetch, because it will fail for private leagues.
+    // This prevents the "permission-denied" toast from showing to visitors on private leagues.
+    // Public leagues will be visible after this check fails, via the getLeagues() call which has open list permissions.
     if (!auth.currentUser) {
+        const publicLeagues = await getLeagues();
+        const publicLeague = publicLeagues.find(l => l.id === id && l.privacy === 'public');
+        if (publicLeague) {
+            return publicLeague;
+        }
         return undefined;
     }
     
@@ -105,6 +117,8 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
         ...data,
         // Ensure createdAt is a string
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        // Ensure matches is always an array
+        matches: data.matches || [],
     } as League;
 }
 
@@ -511,7 +525,7 @@ export async function recordMatch(
   newPlayers[playerBIndex] = playerB;
 
   const newMatch: Match = {
-    id: `match-${Date.now()}`,
+    id: `match-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     leagueId,
     ...formData,
     playerAName: playerA.name,
@@ -536,6 +550,63 @@ export async function recordMatch(
 
 
   return newMatch;
+}
+
+export async function deleteMatch(leagueId: string, matchId: string, requestingUserId: string): Promise<void> {
+  const league = await getLeagueById(leagueId);
+  if (!league) throw new Error("League not found.");
+
+  const matchToDelete = league.matches.find(m => m.id === matchId);
+  if (!matchToDelete) throw new Error("Match not found.");
+
+  // Security checks (client-side for immediate feedback, also enforced by rules)
+  const isParticipant = matchToDelete.playerAId === requestingUserId || matchToDelete.playerBId === requestingUserId;
+  if (!isParticipant) throw new Error("Only a participant can delete this match.");
+
+  const matchDate = new Date(matchToDelete.createdAt);
+  const now = new Date();
+  const hoursSince = (now.getTime() - matchDate.getTime()) / (1000 * 60 * 60);
+  if (hoursSince > 12) throw new Error("This match is too old to be deleted by a player.");
+
+  // Revert stats
+  const playerA = league.players.find(p => p.id === matchToDelete.playerAId);
+  const playerB = league.players.find(p => p.id === matchToDelete.playerBId);
+  if (!playerA || !playerB) throw new Error("One of the players in the match could not be found.");
+
+  // Revert ELO
+  playerA.elo -= matchToDelete.eloChangeA;
+  playerB.elo -= matchToDelete.eloChangeB;
+
+  // Revert wins/losses
+  if (matchToDelete.winnerId === playerA.id) {
+    playerA.wins -= 1;
+    playerB.losses -= 1;
+  } else {
+    playerB.wins -= 1;
+    playerA.losses -= 1;
+  }
+  
+  const newPlayers = league.players.map(p => {
+    if (p.id === playerA.id) return playerA;
+    if (p.id === playerB.id) return playerB;
+    return p;
+  });
+
+  const newMatches = league.matches.filter(m => m.id !== matchId);
+
+  const leagueDocRef = doc(db, 'leagues', leagueId);
+  await updateDoc(leagueDocRef, {
+    players: newPlayers,
+    matches: newMatches
+  }).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: leagueDocRef.path,
+      operation: 'update',
+      requestResourceData: { players: newPlayers, matches: newMatches }
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw new Error("Failed to delete match due to permissions.");
+  });
 }
 
 export async function getUserById(userId: string): Promise<User | null> {

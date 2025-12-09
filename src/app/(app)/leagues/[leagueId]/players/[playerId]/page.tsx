@@ -1,18 +1,33 @@
 
 "use client";
 
-import { getPlayerStats } from "@/lib/data";
+import { getPlayerStats, deleteMatch } from "@/lib/data";
 import { notFound, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User as UserIcon, ArrowLeft, TrendingUp, ChevronsRight, Trophy } from "lucide-react";
+import { User as UserIcon, ArrowLeft, TrendingUp, ChevronsRight, Trophy, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
-import { Metadata } from "next";
+import { format, differenceInHours } from "date-fns";
 import EloChart from "./components/elo-chart";
 import { useEffect, useState } from "react";
 import type { PlayerStats } from "@/lib/types";
+import { useUser } from "@/context/user-context";
+import { useToast } from "@/hooks/use-toast";
+import { useApp } from "@/context/app-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 export default function PlayerPage() {
   const params = useParams();
@@ -20,6 +35,9 @@ export default function PlayerPage() {
   const playerId = params.playerId as string;
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
+  const { toast } = useToast();
+  const { refresh } = useApp();
 
   useEffect(() => {
     async function fetchStats() {
@@ -31,8 +49,25 @@ export default function PlayerPage() {
       setLoading(false);
     }
     fetchStats();
-  }, [leagueId, playerId]);
+  }, [leagueId, playerId, refresh]); // Add refresh to dependencies
 
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!user) return;
+    try {
+      await deleteMatch(leagueId, matchId, user.id);
+      toast({
+        title: "Match Deleted",
+        description: "The match has been removed and stats have been reverted.",
+      });
+      refresh(); // Re-fetch all data to ensure UI is consistent
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error Deleting Match",
+        description: error.message,
+      });
+    }
+  };
 
   if (loading) {
     return <div>Loading player stats...</div>;
@@ -146,12 +181,13 @@ export default function PlayerPage() {
                           <TableHead className="text-center">Result</TableHead>
                            <TableHead className="text-center">Score</TableHead>
                           <TableHead className="text-right">ELO Change</TableHead>
+                          <TableHead className="w-[50px] text-right"></TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
                       {matchHistory.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                             No matches recorded yet for this player.
                             </TableCell>
                         </TableRow>
@@ -160,17 +196,24 @@ export default function PlayerPage() {
                             const isPlayerA = match.playerAId === playerId;
                             const didWin = match.winnerId === playerId;
                             const opponentName = isPlayerA ? match.playerBName : match.playerAName;
+                            const opponentId = isPlayerA ? match.playerBId : match.playerAId;
                             
                             const playerScore = didWin ? Math.max(match.playerAScore, match.playerBScore) : Math.min(match.playerAScore, match.playerBScore);
                             const opponentScore = didWin ? Math.min(match.playerAScore, match.playerBScore) : Math.max(match.playerAScore, match.playerBScore);
 
                             const eloChange = isPlayerA ? match.eloChangeA : match.eloChangeB;
 
+                            const isParticipant = user && (user.id === match.playerAId || user.id === match.playerBId);
+                            const isRecent = differenceInHours(new Date(), new Date(match.createdAt)) < 12;
+                            const canDelete = isParticipant && isRecent;
+
                           return (
                               <TableRow key={match.id}>
                                   <TableCell className="hidden sm:table-cell text-muted-foreground">{format(new Date(match.createdAt), "MMM d, yyyy")}</TableCell>
                                   <TableCell>
-                                      {opponentName}
+                                      <Link href={`/leagues/${leagueId}/players/${opponentId}`} className="hover:underline">
+                                        {opponentName}
+                                      </Link>
                                   </TableCell>
                                   <TableCell className={`text-center font-semibold ${didWin ? 'text-green-500' : 'text-red-500'}`}>
                                     {didWin ? "Win" : "Loss"}
@@ -183,6 +226,40 @@ export default function PlayerPage() {
                                         {eloChange >= 0 ? `+${eloChange}`: eloChange}
                                      </span>
                                   </TableCell>
+                                  <TableCell className="text-right">
+                                      {canDelete && (
+                                         <AlertDialog>
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                                      <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Delete Match</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  This will permanently delete the match record and revert the ELO and stats changes. This action cannot be undone.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteMatch(match.id)}>
+                                                  Delete
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                      )}
+                                    </TableCell>
                               </TableRow>
                           );
                       }))}

@@ -8,16 +8,32 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import type { League, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus, TrendingUp, TrendingDown } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { ArrowUp, ArrowDown, PlusCircle, User as UserIcon, Search, Mail, Trophy, Minus, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
+import { format, formatDistanceToNow, differenceInHours } from "date-fns";
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUser } from '@/context/user-context';
-import { calculateEloChange } from '@/lib/data';
+import { calculateEloChange, deleteMatch } from '@/lib/data';
+import { useToast } from "@/hooks/use-toast";
+import { useApp } from '@/context/app-context';
+
 
 export default function LeagueTabs({ league }: { league: League }) {
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useUser();
+  const { toast } = useToast();
+  const { refresh } = useApp();
   
   const activePlayers = league.players.filter(p => p.status === 'active');
   const sortedMatches = [...(league.matches || [])].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -33,6 +49,25 @@ export default function LeagueTabs({ league }: { league: League }) {
 
   const sortedPlayersByRank = [...playersWithTrend].sort((a, b) => b.elo - a.elo);
   const currentUserPlayer = user ? activePlayers.find(p => p.id === user.id) : null;
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!user) return;
+    try {
+      await deleteMatch(league.id, matchId, user.id);
+      toast({
+        title: "Match Deleted",
+        description: "The match has been removed and stats have been reverted.",
+      });
+      refresh(); // Re-fetch all data to ensure UI is consistent
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error Deleting Match",
+        description: error.message,
+      });
+    }
+  };
+
 
   return (
     <Tabs defaultValue="rankings" className="w-full">
@@ -137,12 +172,13 @@ export default function LeagueTabs({ league }: { league: League }) {
                               <TableHead>Players</TableHead>
                               <TableHead className="text-center">Result</TableHead>
                               <TableHead className="text-right">ELO Change</TableHead>
+                              <TableHead className="w-[50px] text-right"></TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
                         {sortedMatches.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">
+                            <TableCell colSpan={5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center text-center p-8">
                                     <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
                                     <h3 className="text-xl font-semibold">No Matches Yet</h3>
@@ -161,6 +197,10 @@ export default function LeagueTabs({ league }: { league: League }) {
                             const loserScore = winnerIsPlayerA ? match.playerBScore : match.playerAScore;
                             const winnerEloChange = winnerIsPlayerA ? match.eloChangeA : match.eloChangeB;
                             const loserEloChange = winnerIsPlayerA ? match.eloChangeB : match.eloChangeA;
+                            
+                            const isParticipant = user && (user.id === match.playerAId || user.id === match.playerBId);
+                            const isRecent = differenceInHours(new Date(), new Date(match.createdAt)) < 12;
+                            const canDelete = isParticipant && isRecent;
 
                             return (
                                 <TableRow key={match.id}>
@@ -182,6 +222,40 @@ export default function LeagueTabs({ league }: { league: League }) {
                                         <span className="text-muted-foreground"> / </span>
                                         <span className="font-bold text-red-500">{loserEloChange}</span>
                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {canDelete && (
+                                         <AlertDialog>
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                                      <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Delete Match</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                            <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  This will permanently delete the match record and revert the ELO and stats changes. This action cannot be undone.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteMatch(match.id)}>
+                                                  Delete
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
+                                      )}
                                     </TableCell>
                                 </TableRow>
                             );
