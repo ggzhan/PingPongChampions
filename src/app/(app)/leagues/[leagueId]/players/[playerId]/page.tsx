@@ -4,13 +4,13 @@
 import { getPlayerStats, deleteMatch } from "@/lib/data";
 import { notFound, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User as UserIcon, ArrowLeft, TrendingUp, ChevronsRight, Trophy, Trash2 } from "lucide-react";
+import { User as UserIcon, ArrowLeft, TrendingUp, ChevronsRight, Trophy, Trash2, Mail } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, differenceInHours } from "date-fns";
 import EloChart from "./components/elo-chart";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { PlayerStats } from "@/lib/types";
 import { useUser } from "@/context/user-context";
 import { useToast } from "@/hooks/use-toast";
@@ -35,21 +35,34 @@ export default function PlayerPage() {
   const playerId = params.playerId as string;
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const { toast } = useToast();
   const { refresh } = useApp();
 
-  useEffect(() => {
-    async function fetchStats() {
-      if (!leagueId || !playerId) return;
+  const fetchStats = useCallback(async () => {
+    if (!leagueId || !playerId) return;
+    setLoading(true);
+    try {
       const statsData = await getPlayerStats(leagueId, playerId);
       if (statsData) {
         setStats(statsData);
+      } else {
+        setStats(null);
       }
+    } catch (error) {
+      console.error("Failed to fetch player stats:", error);
+      setStats(null);
+    } finally {
       setLoading(false);
     }
-    fetchStats();
-  }, [leagueId, playerId, refresh]); // Add refresh to dependencies
+  }, [leagueId, playerId]);
+  
+  useEffect(() => {
+      if (!userLoading) {
+          fetchStats();
+      }
+  }, [fetchStats, userLoading, refresh]);
+
 
   const handleDeleteMatch = async (matchId: string) => {
     if (!user) return;
@@ -69,7 +82,7 @@ export default function PlayerPage() {
     }
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return <div>Loading player stats...</div>;
   }
 
@@ -98,7 +111,23 @@ export default function PlayerPage() {
                     <UserIcon className="w-8 h-8 text-muted-foreground"/>
                 </div>
                 <div>
-                    <CardTitle className="text-2xl">{player.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="text-2xl">{player.name}</CardTitle>
+                      {player.showEmail && player.email && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <a href={`mailto:${player.email}`} className="text-muted-foreground hover:text-primary">
+                                  <Mail className="h-5 w-5" />
+                                </a>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{player.email}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                    </div>
                     <CardDescription>Rank #{rank} in this league</CardDescription>
                 </div>
             </div>
@@ -271,3 +300,5 @@ export default function PlayerPage() {
     </div>
   );
 }
+
+    
