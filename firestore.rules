@@ -65,7 +65,12 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (isLeagueAdmin(leagueId) || isSuperAdmin());
 
       // UPDATING A LEAGUE
-      allow update: if isSignedIn() && (isLeagueAdmin(leagueId) || isSuperAdmin() ||
+      allow update: if isSignedIn() && (
+        // Allow an admin to change league settings or manage admins
+        (
+            (isLeagueAdmin(leagueId) || isSuperAdmin()) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'description', 'privacy', 'leaderboardVisible', 'inviteCode', 'adminIds'])
+        ) ||
         // Allow a player to join
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players']) &&
          request.resource.data.players.size() == resource.data.players.size() + 1
@@ -88,3 +93,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

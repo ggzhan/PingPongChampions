@@ -15,6 +15,8 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
@@ -196,6 +198,44 @@ export async function updateLeague(id: string, updates: Partial<Pick<League, 'na
 
     return updatedLeague;
 }
+
+export async function addLeagueAdmin(leagueId: string, newAdminId: string, requestingUserId: string): Promise<void> {
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    // Security rules will check if requestingUserId is actually an admin
+    await updateDoc(leagueDocRef, {
+        adminIds: arrayUnion(newAdminId)
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { adminIds: `add ${newAdminId}` }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("You don't have permission to add an admin.");
+    });
+}
+
+export async function removeLeagueAdmin(leagueId: string, adminIdToRemove: string, requestingUserId: string): Promise<void> {
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    const league = await getLeagueById(leagueId);
+
+    if (!league) throw new Error("League not found.");
+    if (league.adminIds.length <= 1) throw new Error("Cannot remove the only administrator.");
+    if (adminIdToRemove === requestingUserId) throw new Error("You cannot remove yourself as an administrator.");
+
+    await updateDoc(leagueDocRef, {
+        adminIds: arrayRemove(adminIdToRemove)
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { adminIds: `remove ${adminIdToRemove}` }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("You don't have permission to remove an admin.");
+    });
+}
+
 
 export async function regenerateInviteCode(leagueId: string): Promise<string | undefined> {
     const leagueDocRef = doc(db, 'leagues', leagueId);
@@ -652,3 +692,5 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
+
+    

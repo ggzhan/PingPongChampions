@@ -17,14 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { getLeagueById, updateLeague, deleteLeague, regenerateInviteCode } from "@/lib/data";
+import { getLeagueById, updateLeague, deleteLeague, regenerateInviteCode, addLeagueAdmin, removeLeagueAdmin } from "@/lib/data";
 import { notFound, useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/context/user-context";
 import { useState, useEffect } from "react";
-import type { League } from "@/lib/types";
+import type { League, Player } from "@/lib/types";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, KeyRound, RefreshCw, Copy, Lock, Globe, EyeOff } from "lucide-react";
+import { ArrowLeft, AlertTriangle, KeyRound, RefreshCw, Copy, Lock, Globe, EyeOff, ShieldPlus, Trash2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,6 +40,15 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Switch } from "@/components/ui/switch";
 import { useApp } from "@/context/app-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -54,64 +63,68 @@ const formSchema = z.object({
   leaderboardVisible: z.boolean().default(true),
 });
 
+const addAdminSchema = z.object({
+  newAdminId: z.string().min(1, "Please select a player to make an admin."),
+});
+
 export default function LeagueAdminPage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
-  const { refresh } = useApp();
+  const { refresh, leagues } = useApp();
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState<string | undefined>("");
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      privacy: "public",
-      leaderboardVisible: true,
-    },
-  });
+  const fetchLeague = async () => {
+    if (!user) return;
+    
+    const leagueData = await getLeagueById(leagueId);
+    if (leagueData) {
+      const isSuperAdmin = user.email === 'markus.koenigreich@gmail.com';
+      const isAdmin = leagueData.adminIds.includes(user.id);
 
-  const privacyValue = form.watch("privacy");
+      if (!isAdmin && !isSuperAdmin) {
+          toast({ variant: "destructive", title: "Unauthorized", description: "You are not an admin for this league." });
+          router.push(`/leagues/${leagueId}`);
+          return;
+      }
+
+      setLeague(leagueData);
+      setInviteCode(leagueData.inviteCode);
+      form.reset({
+          name: leagueData.name,
+          description: leagueData.description,
+          privacy: leagueData.privacy,
+          leaderboardVisible: leagueData.leaderboardVisible ?? true,
+      });
+
+    } else {
+      notFound();
+    }
+    setLoading(false);
+  }
 
    useEffect(() => {
-    async function fetchLeague() {
-      if (!user) return;
-      
-      const leagueData = await getLeagueById(leagueId);
-      if (leagueData) {
-        const isSuperAdmin = user.email === 'markus.koenigreich@gmail.com';
-        const isAdmin = leagueData.adminIds.includes(user.id);
-
-        if (!isAdmin && !isSuperAdmin) {
-            toast({ variant: "destructive", title: "Unauthorized", description: "You are not an admin for this league." });
-            router.push(`/leagues/${leagueId}`);
-            return;
-        }
-
-        setLeague(leagueData);
-        setInviteCode(leagueData.inviteCode);
-        form.reset({
-            name: leagueData.name,
-            description: leagueData.description,
-            privacy: leagueData.privacy,
-            leaderboardVisible: leagueData.leaderboardVisible ?? true,
-        });
-
-      } else {
-        notFound();
-      }
-      setLoading(false);
-    }
-
     if (leagueId && user) {
         fetchLeague();
     }
-  }, [leagueId, user, router, toast, form]);
+  }, [leagueId, user, router, toast, leagues]); // Use leagues from app context as a dependency
 
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: "", description: "", privacy: "public", leaderboardVisible: true },
+  });
+
+  const addAdminForm = useForm<z.infer<typeof addAdminSchema>>({
+    resolver: zodResolver(addAdminSchema),
+    defaultValues: { newAdminId: "" },
+  });
+
+  const privacyValue = form.watch("privacy");
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!league) return;
@@ -130,6 +143,37 @@ export default function LeagueAdminPage() {
         title: "Oh no!",
         description: "Something went wrong while updating the league.",
       });
+    }
+  }
+
+  async function handleAddAdmin(values: z.infer<typeof addAdminSchema>) {
+    if (!league || !user) return;
+    try {
+      await addLeagueAdmin(league.id, values.newAdminId, user.id);
+      toast({ title: "Admin Added", description: "A new administrator has been appointed." });
+      await fetchLeague(); // Re-fetch to update admin list
+      addAdminForm.reset();
+    } catch(error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    }
+  }
+
+  async function handleRemoveAdmin(adminIdToRemove: string) {
+    if (!league || !user) return;
+     if (league.adminIds.length <= 1) {
+      toast({ variant: "destructive", title: "Cannot Remove Admin", description: "You cannot remove the only administrator." });
+      return;
+    }
+    if (adminIdToRemove === user.id) {
+       toast({ variant: "destructive", title: "Cannot Remove Self", description: "You cannot remove yourself as an administrator." });
+       return;
+    }
+    try {
+      await removeLeagueAdmin(league.id, adminIdToRemove, user.id);
+      toast({ title: "Admin Removed", description: "The administrator has been removed." });
+      await fetchLeague(); // Re-fetch to update admin list
+    } catch(error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
     }
   }
 
@@ -170,6 +214,10 @@ export default function LeagueAdminPage() {
     return <div>Loading admin panel...</div>
   }
 
+  const activePlayers = league.players.filter(p => p.status === 'active');
+  const potentialNewAdmins = activePlayers.filter(p => !league.adminIds.includes(p.id));
+  const currentAdmins = league.adminIds.map(adminId => activePlayers.find(p => p.id === adminId)).filter(Boolean) as Player[];
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
         <Button variant="outline" asChild className="mb-4">
@@ -180,7 +228,7 @@ export default function LeagueAdminPage() {
         </Button>
         <Card>
             <CardHeader>
-                <CardTitle className="text-3xl font-bold font-headline">League Administration</CardTitle>
+                <CardTitle className="text-3xl font-bold font-headline">League Settings</CardTitle>
                 <CardDescription>
                     Update the settings for your league, &quot;{league.name}&quot;.
                 </CardDescription>
@@ -287,6 +335,86 @@ export default function LeagueAdminPage() {
             </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Administrator Management</CardTitle>
+            <CardDescription>Add or remove administrators for this league.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium mb-2">Current Admins</h3>
+              <div className="space-y-2">
+                {currentAdmins.map((admin) => (
+                  <div key={admin.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                    <span className="font-semibold">{admin.name}</span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          disabled={league.adminIds.length <= 1 || admin.id === user?.id}
+                          aria-label="Remove admin"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove {admin.name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            They will no longer have administrative privileges for this league. This action can be undone by adding them again.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRemoveAdmin(admin.id)}>
+                            Remove Admin
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Add New Admin</h3>
+              <Form {...addAdminForm}>
+                <form onSubmit={addAdminForm.handleSubmit(handleAddAdmin)} className="flex items-end gap-2">
+                   <FormField
+                      control={addAdminForm.control}
+                      name="newAdminId"
+                      render={({ field }) => (
+                        <FormItem className="flex-grow">
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a player..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {potentialNewAdmins.map(player => (
+                                <SelectItem key={player.id} value={player.id}>{player.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage className="absolute mt-1"/>
+                        </FormItem>
+                      )}
+                    />
+                  <Button type="submit" variant="secondary"><ShieldPlus className="mr-2 h-4 w-4"/>Add Admin</Button>
+                </form>
+              </Form>
+            </div>
+
+          </CardContent>
+        </Card>
+
+
         <Card className="border-destructive">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Danger Zone</CardTitle>
@@ -318,3 +446,5 @@ export default function LeagueAdminPage() {
     </div>
   );
 }
+
+    
