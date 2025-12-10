@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -16,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
+const superAdminEmails = ['markus.koenigreich@gmail.com', 'gerald.zhang@gmail.com'];
+
 export default function TestEndpointsPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function TestEndpointsPage() {
   const [userId, setUserId] = useState("");
   const [playerId, setPlayerId] = useState("");
 
-  const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
+  const isSuperAdmin = user?.email ? superAdminEmails.includes(user.email) : false;
 
   if (userLoading) {
     return <div>Loading...</div>;

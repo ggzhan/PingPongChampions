@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -14,9 +15,11 @@ import {
 import { useUser } from '@/context/user-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+const superAdminEmails = ['markus.koenigreich@gmail.com', 'gerald.zhang@gmail.com'];
+
 export default function Header() {
   const { user, logout } = useUser();
-  const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
+  const isSuperAdmin = user?.email ? superAdminEmails.includes(user.email) : false;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">

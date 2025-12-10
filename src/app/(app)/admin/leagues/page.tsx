@@ -25,6 +25,8 @@ import { Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useApp } from "@/context/app-context";
 
+const superAdminEmails = ['markus.koenigreich@gmail.com', 'gerald.zhang@gmail.com'];
+
 export default function LeagueManagementPage() {
   const { user } = useUser();
   const router = useRouter();
@@ -33,7 +35,7 @@ export default function LeagueManagementPage() {
   const { toast } = useToast();
   const { refresh } = useApp();
 
-  const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
+  const isSuperAdmin = user?.email ? superAdminEmails.includes(user.email) : false;
 
   useEffect(() => {
     if (!user) return;

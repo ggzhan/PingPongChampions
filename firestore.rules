@@ -18,7 +18,7 @@ service cloud.firestore {
     }
     
     function isSuperAdmin() {
-      return request.auth.token.email == 'markus.koenigreich@gmail.com';
+      return request.auth.token.email in ['markus.koenigreich@gmail.com', 'gerald.zhang@gmail.com'];
     }
 
     function isLeagueAdmin(leagueId) {
@@ -71,13 +71,12 @@ service cloud.firestore {
             (isLeagueAdmin(leagueId) || isSuperAdmin()) &&
             request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'description', 'privacy', 'leaderboardVisible', 'inviteCode', 'adminIds'])
         ) ||
-        // Allow a player to join
+        // Allow a player to join or leave
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players']) &&
-         request.resource.data.players.size() == resource.data.players.size() + 1
-        ) ||
-        // Allow a player to leave (status change)
-         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players']) &&
-         request.resource.data.players.size() == resource.data.players.size()
+            (
+                request.resource.data.players.size() == resource.data.players.size() + 1 ||
+                request.resource.data.players.size() == resource.data.players.size()
+            )
         ) ||
         // Allow a participant to delete a recent match
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['matches', 'players']) &&
@@ -93,5 +92,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

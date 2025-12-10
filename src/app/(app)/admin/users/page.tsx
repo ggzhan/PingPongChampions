@@ -23,6 +23,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 
+const superAdminEmails = ['markus.koenigreich@gmail.com', 'gerald.zhang@gmail.com'];
+
 export default function UserManagementPage() {
   const { user } = useUser();
   const router = useRouter();
@@ -30,7 +32,7 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const isSuperAdmin = user?.email === 'markus.koenigreich@gmail.com';
+  const isSuperAdmin = user?.email ? superAdminEmails.includes(user.email) : false;
 
   useEffect(() => {
     if (!user) return; // Wait for user to be loaded
