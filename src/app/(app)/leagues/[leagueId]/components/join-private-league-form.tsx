@@ -74,7 +74,7 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
             <FormItem>
               <FormLabel>Invite Code</FormLabel>
               <FormControl>
-                <Input placeholder="ABCXYZ" {...field} className="uppercase font-mono tracking-widest"/>
+                <Input placeholder="Invite Code" {...field} className="uppercase font-mono tracking-widest"/>
               </FormControl>
               <FormMessage className="absolute mt-1" />
             </FormItem>
