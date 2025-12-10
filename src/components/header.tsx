@@ -1,8 +1,7 @@
-
 "use client";
 
 import Link from 'next/link';
-import { Trophy, User, LogOut, LogIn, UserPlus, Shield, Swords } from 'lucide-react';
+import { Trophy, User, LogOut, LogIn, UserPlus, Shield, Swords, Beaker } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -62,6 +61,9 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/admin/leagues"><Swords className="mr-2 h-4 w-4" />League Management</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/test"><Beaker className="mr-2 h-4 w-4" />Test Endpoints</Link>
                     </DropdownMenuItem>
                   </>
                 )}
