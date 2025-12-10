@@ -692,3 +692,5 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
+
+    
