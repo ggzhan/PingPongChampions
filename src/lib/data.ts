@@ -367,7 +367,7 @@ export async function joinLeagueByInviteCode(inviteCode: string, user: User, lea
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-        throw new Error("Invalid invite code or league does not match.");
+        throw new Error("Invalid invite code.");
     }
     
     // Although we filter by invite code, a malicious user could guess one.
@@ -692,5 +692,3 @@ export async function createUserProfile(user: User): Promise<void> {
         throw new Error("Failed to create user profile due to permissions.");
     });
 }
-
-    

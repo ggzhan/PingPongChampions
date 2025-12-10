@@ -66,14 +66,15 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center gap-2">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-2">
         <FormField
           control={form.control}
           name="inviteCode"
           render={({ field }) => (
             <FormItem>
+              <FormLabel>Invite Code</FormLabel>
               <FormControl>
-                <Input placeholder="Invite Code" {...field} className="uppercase font-mono tracking-widest"/>
+                <Input placeholder="ABCXYZ" {...field} className="uppercase font-mono tracking-widest"/>
               </FormControl>
               <FormMessage className="absolute mt-1" />
             </FormItem>
@@ -84,5 +85,3 @@ export default function JoinPrivateLeagueForm({ leagueId, onLeagueJoined }: Join
     </Form>
   );
 }
-
-    
