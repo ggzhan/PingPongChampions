@@ -36,8 +36,12 @@ export default function LoginForm() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      if (!userCredential.user.emailVerified) {
-         await sendEmailVerification(userCredential.user);
+      // Force a reload of the user's profile to get the latest emailVerified status
+      await userCredential.user.reload();
+      const freshUser = userCredential.user;
+
+      if (!freshUser.emailVerified) {
+         await sendEmailVerification(freshUser);
          toast({
            variant: "destructive",
            title: "Email not verified",
@@ -47,12 +51,12 @@ export default function LoginForm() {
       }
       
       // Ensure user profile exists after login
-      let userProfile = await getUserById(userCredential.user.uid);
+      let userProfile = await getUserById(freshUser.uid);
       if (!userProfile) {
         const newUserProfile = {
-            id: userCredential.user.uid,
-            name: userCredential.user.displayName || 'New User',
-            email: userCredential.user.email!,
+            id: freshUser.uid,
+            name: freshUser.displayName || 'New User',
+            email: freshUser.email!,
             showEmail: false
         };
         await createUserProfile(newUserProfile);
