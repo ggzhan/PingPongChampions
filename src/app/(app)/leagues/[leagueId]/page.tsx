@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
+import { getLeagueById, removePlayerFromLeague } from "@/lib/data";
 import { notFound, useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,17 +65,17 @@ export default function LeaguePage() {
       fetchLeague();
     }
   }, [fetchLeague, userLoading]);
-  
+
   if (loading || userLoading) {
     return <div>Loading...</div>; // Or a skeleton loader
   }
-  
+
   // Special case for logged-out users trying to access a page they can't see
   if (!user && (fetchError || !league)) {
-     return (
-       <Card className="text-center p-8">
+    return (
+      <Card className="text-center p-8">
         <CardHeader>
-           <div className="mx-auto bg-muted rounded-full h-16 w-16 flex items-center justify-center">
+          <div className="mx-auto bg-muted rounded-full h-16 w-16 flex items-center justify-center">
             <ShieldQuestion className="h-8 w-8 text-muted-foreground" />
           </div>
           <CardTitle className="mt-4">Do you want to join this league?</CardTitle>
@@ -84,15 +84,15 @@ export default function LeaguePage() {
         <CardContent>
           <div className="flex justify-center gap-4">
             <Button asChild>
-              <Link href="/login"><LogIn className="mr-2 h-4 w-4"/>Login</Link>
+              <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/register"><UserPlus className="mr-2 h-4 w-4"/>Sign Up</Link>
+              <Link href="/register"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
             </Button>
           </div>
         </CardContent>
       </Card>
-     );
+    );
   }
 
   if (!league) {
@@ -104,18 +104,6 @@ export default function LeaguePage() {
   const activePlayers = league.players.filter(p => p.status === 'active');
   const canRecordMatch = activePlayers.length >= 2;
 
-
-  const handleJoinLeague = async () => {
-    if (user && !isMember && league.privacy === 'public') {
-      await addUserToLeague(league.id, user);
-      fetchLeague();
-      toast({
-        title: "League Joined!",
-        description: `You are now a member of ${league.name}.`,
-      });
-    }
-  };
-
   const handleLeaveLeague = async () => {
     if (user && isMember) {
       await removePlayerFromLeague(league.id, user.id);
@@ -126,8 +114,7 @@ export default function LeaguePage() {
       });
     }
   };
-  
-  const showJoinForm = user && league.privacy === 'private' && !isMember;
+
   const showLeaderboard = league.privacy === 'public' || (league.privacy === 'private' && league.leaderboardVisible) || isMember || isAdmin;
 
 
@@ -136,15 +123,15 @@ export default function LeaguePage() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex-1">
-              <div className="flex items-center gap-4 mb-2 flex-wrap">
+            <div className="flex items-center gap-4 mb-2 flex-wrap">
               <CardTitle className="text-3xl font-bold font-headline">{league.name}</CardTitle>
               <Badge variant="outline" className="capitalize flex gap-1.5 items-center">
-                  {league.privacy === 'public' ? <Globe className="h-3 w-3"/> : <Lock className="h-3 w-3"/>}
-                  {league.privacy}
+                {league.privacy === 'public' ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                {league.privacy}
               </Badge>
               {league.privacy === 'private' && !league.leaderboardVisible && (
                 <Badge variant="secondary" className="capitalize flex gap-1.5 items-center">
-                  <EyeOff className="h-3 w-3"/> Hidden Leaderboard
+                  <EyeOff className="h-3 w-3" /> Hidden Leaderboard
                 </Badge>
               )}
             </div>
@@ -152,79 +139,74 @@ export default function LeaguePage() {
           </div>
         </CardHeader>
         <CardContent>
-            <Separator className="mb-4"/>
-            <div className="flex items-center gap-2 flex-wrap">
-                {!isMember && user && league.privacy === 'public' && (
-                <Button onClick={handleJoinLeague}>
-                  <UserPlus className="mr-2 h-4 w-4" /> Join League
-                </Button>
-              )}
-                {isMember && user && (
-                  <>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="inline-block"> 
-                          <Button variant="success" asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
-                            <Link href={`/leagues/${league.id}/matches/record`}>
-                                <PlusCircle className="mr-2 h-4 w-4"/>Record Match
-                            </Link>
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {!canRecordMatch && (
-                        <TooltipContent>
-                          <p>At least 2 active players are needed to record a match.</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+          <Separator className="mb-4" />
+          <div className="flex items-center gap-2 flex-wrap">
+            {!isMember && user && (
+              <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague} />
+            )}
+            {isMember && user && (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block">
+                        <Button variant="success" asChild disabled={!canRecordMatch} aria-disabled={!canRecordMatch} className={!canRecordMatch ? "pointer-events-none" : ""}>
+                          <Link href={`/leagues/${league.id}/matches/record`}>
+                            <PlusCircle className="mr-2 h-4 w-4" />Record Match
+                          </Link>
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!canRecordMatch && (
+                      <TooltipContent>
+                        <p>At least 2 active players are needed to record a match.</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive">
-                        <LogOut className="mr-2 h-4 w-4" /> Leave League
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          You will be removed from the leaderboard, but your match history will be kept. 
-                          You can rejoin the league at any time if it's public.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleLeaveLeague}>
-                          Leave League
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  </>
-              )}
-               {showJoinForm && (
-                  <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague}/>
-              )}
-              {isAdmin && (
-                <Button variant="secondary" asChild>
-                  <Link href={`/leagues/${league.id}/admin`}>
-                    <Settings className="mr-2 h-4 w-4" /> Admin
-                  </Link>
-                </Button>
-              )}
-            </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <LogOut className="mr-2 h-4 w-4" /> Leave League
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You will be removed from the leaderboard, but your match history will be kept.
+                        You can rejoin the league at any time if it's public.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLeaveLeague}>
+                        Leave League
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+            {isAdmin && (
+              <Button variant="secondary" asChild>
+                <Link href={`/leagues/${league.id}/admin`}>
+                  <Settings className="mr-2 h-4 w-4" /> Admin
+                </Link>
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {showLeaderboard && <LeagueTabs league={league} />}
       {!showLeaderboard && !isMember && (
-         <Card className="text-center p-8">
-            <CardHeader>
-                <CardTitle>Leaderboard is Hidden</CardTitle>
-                <CardDescription>The administrator of this league has chosen to hide the leaderboard from non-members.</CardDescription>
-            </CardHeader>
+        <Card className="text-center p-8">
+          <CardHeader>
+            <CardTitle>Leaderboard is Hidden</CardTitle>
+            <CardDescription>The administrator of this league has chosen to hide the leaderboard from non-members.</CardDescription>
+          </CardHeader>
         </Card>
       )}
     </div>
