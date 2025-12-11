@@ -2,21 +2,21 @@
 'use client';
 
 import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  query,
-  where,
-  serverTimestamp,
-  setDoc,
-  Timestamp,
-  arrayUnion,
-  arrayRemove,
+    collection,
+    doc,
+    addDoc,
+    getDocs,
+    getDoc,
+    updateDoc,
+    deleteDoc,
+    writeBatch,
+    query,
+    where,
+    serverTimestamp,
+    setDoc,
+    Timestamp,
+    arrayUnion,
+    arrayRemove,
 } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import type { League, User, Match, Player, PlayerStats, EloHistory } from './types';
@@ -30,11 +30,11 @@ function generateInviteCode(): string {
 // API-like functions
 export async function getLeagues(): Promise<League[]> {
     const leaguesCol = collection(db, 'leagues');
-    
+
     // Always query all leagues. Security rules will enforce what the user can see.
     // For list, we've set it to `true` so everyone can see all leagues on the homepage.
     const q = query(leaguesCol);
-    
+
     const leagueSnapshot = await getDocs(q).catch(async (serverError) => {
         // We only want to throw a permission error if a user is logged in.
         // For logged-out users, a failure is expected for private leagues and shouldn't be an "error".
@@ -52,8 +52,8 @@ export async function getLeagues(): Promise<League[]> {
 
     const leagues = leagueSnapshot.docs.map(doc => {
         const data = doc.data();
-        return { 
-            id: doc.id, 
+        return {
+            id: doc.id,
             ...data,
             // Ensure createdAt is a string and handle server timestamps
             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
@@ -61,7 +61,7 @@ export async function getLeagues(): Promise<League[]> {
             matches: data.matches || [],
         } as League;
     });
-    
+
     const result = leagues.map(league => {
         let lastActivityDate: Date;
         // league.createdAt could be a string or a Timestamp pending from the server, handle both.
@@ -73,7 +73,7 @@ export async function getLeagues(): Promise<League[]> {
         } else {
             lastActivityDate = leagueCreationDate;
         }
-        
+
         return {
             ...league,
             activePlayerCount: league.players.filter(p => p.status === 'active').length,
@@ -82,7 +82,7 @@ export async function getLeagues(): Promise<League[]> {
         }
     });
 
-    result.sort((a,b) => a.name.localeCompare(b.name));
+    result.sort((a, b) => a.name.localeCompare(b.name));
     return result;
 }
 
@@ -100,7 +100,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
         }
         return undefined;
     }
-    
+
     const leagueDoc = await getDoc(leagueDocRef).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: leagueDocRef.path,
@@ -114,8 +114,8 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
         return undefined;
     }
     const data = leagueDoc.data();
-    return { 
-        id: leagueDoc.id, 
+    return {
+        id: leagueDoc.id,
         ...data,
         // Ensure createdAt is a string
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
@@ -126,7 +126,7 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
 
 export async function createLeague(leagueData: Omit<League, 'id' | 'players' | 'matches' | 'inviteCode' | 'activePlayerCount'> & { creator: User }): Promise<League> {
     const { creator, ...restOfLeagueData } = leagueData;
-    
+
     const newPlayer: Player = {
         id: creator.id,
         name: creator.name,
@@ -150,15 +150,15 @@ export async function createLeague(leagueData: Omit<League, 'id' | 'players' | '
 
     const leaguesCol = collection(db, 'leagues');
     const docRef = await addDoc(leaguesCol, newLeagueData)
-    .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: leaguesCol.path,
-            operation: 'create',
-            requestResourceData: newLeagueData,
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: leaguesCol.path,
+                operation: 'create',
+                requestResourceData: newLeagueData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            return null;
         });
-        errorEmitter.emit('permission-error', permissionError);
-        return null;
-    });
 
     if (!docRef) {
         throw new Error("Failed to create league due to permissions.");
@@ -192,7 +192,7 @@ export async function updateLeague(id: string, updates: Partial<Pick<League, 'na
         errorEmitter.emit('permission-error', permissionError);
         throw new Error("Failed to update league due to permissions.");
     });
-    
+
     const updatedLeague = await getLeagueById(id);
     if (!updatedLeague) throw new Error("Could not fetch updated league");
 
@@ -271,95 +271,95 @@ export async function deleteLeague(leagueId: string): Promise<void> {
 }
 
 export async function getPlayerStats(leagueId: string, playerId: string): Promise<PlayerStats | undefined> {
-  const league = await getLeagueById(leagueId);
-  if (!league) return undefined;
-  
-  const player = league.players.find(p => p.id === playerId);
-  if (!player || player.status === 'inactive') return undefined;
-  
-  const sortedPlayers = [...league.players]
-    .filter(p => p.status === 'active')
-    .sort((a, b) => b.elo - a.elo);
-  const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
-  
-  const matchHistory = (league.matches || [])
-    .filter(m => m.playerAId === playerId || m.playerBId === playerId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const league = await getLeagueById(leagueId);
+    if (!league) return undefined;
 
-  // Calculate ELO history
-  const eloHistory: EloHistory[] = [{ date: 'Start', elo: 1000, matchIndex: 0 }];
-  let currentElo = 1000;
-  matchHistory.forEach((match, index) => {
-    const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
-    currentElo += eloChange;
-    eloHistory.push({
-      date: new Date(match.createdAt).toLocaleDateString(),
-      elo: currentElo,
-      matchIndex: index + 1,
+    const player = league.players.find(p => p.id === playerId);
+    if (!player || player.status === 'inactive') return undefined;
+
+    const sortedPlayers = [...league.players]
+        .filter(p => p.status === 'active')
+        .sort((a, b) => b.elo - a.elo);
+    const rank = sortedPlayers.findIndex(p => p.id === playerId) + 1;
+
+    const matchHistory = (league.matches || [])
+        .filter(m => m.playerAId === playerId || m.playerBId === playerId)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    // Calculate ELO history
+    const eloHistory: EloHistory[] = [{ date: 'Start', elo: 1000, matchIndex: 0 }];
+    let currentElo = 1000;
+    matchHistory.forEach((match, index) => {
+        const eloChange = match.playerAId === playerId ? match.eloChangeA : match.eloChangeB;
+        currentElo += eloChange;
+        eloHistory.push({
+            date: new Date(match.createdAt).toLocaleDateString(),
+            elo: currentElo,
+            matchIndex: index + 1,
+        });
     });
-  });
 
-  // Calculate Head-to-Head stats
-  const headToHead: { [opponentId: string]: { opponentName: string, wins: number, losses: number } } = {};
-  matchHistory.forEach(match => {
-    const isPlayerA = match.playerAId === playerId;
-    const opponentId = isPlayerA ? match.playerBId : match.playerAId;
-    const opponentName = isPlayerA ? match.playerBName : match.playerAName;
-    const didWin = match.winnerId === playerId;
+    // Calculate Head-to-Head stats
+    const headToHead: { [opponentId: string]: { opponentName: string, wins: number, losses: number } } = {};
+    matchHistory.forEach(match => {
+        const isPlayerA = match.playerAId === playerId;
+        const opponentId = isPlayerA ? match.playerBId : match.playerAId;
+        const opponentName = isPlayerA ? match.playerBName : match.playerAName;
+        const didWin = match.winnerId === playerId;
 
-    if (!headToHead[opponentId]) {
-      headToHead[opponentId] = { opponentName, wins: 0, losses: 0 };
-    }
-    if (didWin) {
-      headToHead[opponentId].wins += 1;
-    } else {
-      headToHead[opponentId].losses += 1;
-    }
-  });
+        if (!headToHead[opponentId]) {
+            headToHead[opponentId] = { opponentName, wins: 0, losses: 0 };
+        }
+        if (didWin) {
+            headToHead[opponentId].wins += 1;
+        } else {
+            headToHead[opponentId].losses += 1;
+        }
+    });
 
-  return {
-    player: JSON.parse(JSON.stringify(player)),
-    leagueId,
-    rank,
-    matchHistory: matchHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    eloHistory,
-    headToHeadStats: Object.entries(headToHead).map(([opponentId, stats]) => ({ opponentId, ...stats })),
-  };
+    return {
+        player: JSON.parse(JSON.stringify(player)),
+        leagueId,
+        rank,
+        matchHistory: matchHistory.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        eloHistory,
+        headToHeadStats: Object.entries(headToHead).map(([opponentId, stats]) => ({ opponentId, ...stats })),
+    };
 }
 
 
 export async function addUserToLeague(leagueId: string, user: User): Promise<void> {
-  const league = await getLeagueById(leagueId);
+    const league = await getLeagueById(leagueId);
 
-  if (league && user) {
-    const existingPlayer = league.players.find(p => p.id === user.id);
-    let newPlayers;
+    if (league && user) {
+        const existingPlayer = league.players.find(p => p.id === user.id);
+        let newPlayers;
 
-    if (existingPlayer) {
-      newPlayers = league.players.map(p => p.id === user.id ? { ...p, status: 'active' } : p);
-    } else {
-       const newPlayer: Player = {
-        ...user,
-        elo: 1000,
-        wins: 0,
-        losses: 0,
-        status: 'active',
-        showEmail: user.showEmail ?? true,
-        createdAt: new Date().toISOString(),
-      };
-      newPlayers = [...(league.players || []), newPlayer];
-    }
-    const leagueDocRef = doc(db, 'leagues', leagueId);
-    await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: leagueDocRef.path,
-            operation: 'update',
-            requestResourceData: { players: newPlayers }
+        if (existingPlayer) {
+            newPlayers = league.players.map(p => p.id === user.id ? { ...p, status: 'active' } : p);
+        } else {
+            const newPlayer: Player = {
+                ...user,
+                elo: 1000,
+                wins: 0,
+                losses: 0,
+                status: 'active',
+                showEmail: user.showEmail ?? true,
+                createdAt: new Date().toISOString(),
+            };
+            newPlayers = [...(league.players || []), newPlayer];
+        }
+        const leagueDocRef = doc(db, 'leagues', leagueId);
+        await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: leagueDocRef.path,
+                operation: 'update',
+                requestResourceData: { players: newPlayers }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw new Error("Failed to add user due to permissions.");
         });
-        errorEmitter.emit('permission-error', permissionError);
-        throw new Error("Failed to add user due to permissions.");
-    });
-  }
+    }
 }
 
 export async function joinLeagueByInviteCode(inviteCode: string, user: User, leagueId: string): Promise<League> {
@@ -369,7 +369,7 @@ export async function joinLeagueByInviteCode(inviteCode: string, user: User, lea
     if (querySnapshot.empty) {
         throw new Error("Invalid invite code.");
     }
-    
+
     // Although we filter by invite code, a malicious user could guess one.
     // We double-check that the invite code corresponds to the league they are trying to join.
     const leagueDoc = querySnapshot.docs.find(doc => doc.id === leagueId);
@@ -385,20 +385,20 @@ export async function joinLeagueByInviteCode(inviteCode: string, user: User, lea
 
 
 export async function removePlayerFromLeague(leagueId: string, userId: string): Promise<void> {
-  const league = await getLeagueById(leagueId);
-  if (league) {
-    const newPlayers = league.players.map(p => p.id === userId ? { ...p, status: 'inactive' } : p);
-    const leagueDocRef = doc(db, 'leagues', leagueId);
-    await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: leagueDocRef.path,
-            operation: 'update',
-            requestResourceData: { players: newPlayers }
+    const league = await getLeagueById(leagueId);
+    if (league) {
+        const newPlayers = league.players.map(p => p.id === userId ? { ...p, status: 'inactive' } : p);
+        const leagueDocRef = doc(db, 'leagues', leagueId);
+        await updateDoc(leagueDocRef, { players: newPlayers }).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: leagueDocRef.path,
+                operation: 'update',
+                requestResourceData: { players: newPlayers }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw new Error("Failed to remove player due to permissions.");
         });
-        errorEmitter.emit('permission-error', permissionError);
-        throw new Error("Failed to remove player due to permissions.");
-    });
-  }
+    }
 }
 
 export async function updateUserInLeagues(user: User): Promise<void> {
@@ -436,7 +436,7 @@ export async function updateUserInLeagues(user: User): Promise<void> {
             return match;
         });
 
-        if(leagueWasUpdated) {
+        if (leagueWasUpdated) {
             const leagueRef = doc(db, 'leagues', league.id);
             batch.update(leagueRef, { players: newPlayers, matches: newMatches });
         }
@@ -461,7 +461,7 @@ export async function deleteUserAccount(userId: string): Promise<void> {
 
     leagues.forEach(league => {
         let leagueWasUpdated = false;
-        
+
         const newPlayers = league.players.map(player => {
             if (player.id === userId) {
                 leagueWasUpdated = true;
@@ -515,138 +515,138 @@ export async function deleteUserAccount(userId: string): Promise<void> {
 }
 
 export function calculateEloChange(playerElo: number, opponentElo: number, playerMatchesPlayed: number, result: 'win' | 'loss'): number {
-  const K = playerMatchesPlayed < 30 ? 40 : 20;
-  const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
-  const actualScore = result === 'win' ? 1 : 0;
-  return Math.round(K * (actualScore - expectedScore));
+    const K = playerMatchesPlayed < 30 ? 40 : 20;
+    const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+    const actualScore = result === 'win' ? 1 : 0;
+    return Math.round(K * (actualScore - expectedScore));
 }
 
 export async function recordMatch(
-  leagueId: string,
-  formData: {
-    playerAId: string;
-    playerBId: string;
-    playerAScore: number;
-    playerBScore: number;
-    winnerId: string;
-  }
+    leagueId: string,
+    formData: {
+        playerAId: string;
+        playerBId: string;
+        playerAScore: number;
+        playerBScore: number;
+        winnerId: string;
+    }
 ): Promise<Match> {
-  const league = await getLeagueById(leagueId);
-  if (!league) {
-    throw new Error('League not found');
-  }
+    const league = await getLeagueById(leagueId);
+    if (!league) {
+        throw new Error('League not found');
+    }
 
-  const playerAIndex = league.players.findIndex(p => p.id === formData.playerAId);
-  const playerBIndex = league.players.findIndex(p => p.id === formData.playerBId);
-  const playerA = league.players[playerAIndex];
-  const playerB = league.players[playerBIndex];
+    const playerAIndex = league.players.findIndex(p => p.id === formData.playerAId);
+    const playerBIndex = league.players.findIndex(p => p.id === formData.playerBId);
+    const playerA = league.players[playerAIndex];
+    const playerB = league.players[playerBIndex];
 
-  if (!playerA || !playerB) {
-    throw new Error('One or both players not found in the league');
-  }
+    if (!playerA || !playerB) {
+        throw new Error('One or both players not found in the league');
+    }
 
-  const playerAMatchesPlayed = playerA.wins + playerA.losses;
-  const playerBMatchesPlayed = playerB.wins + playerB.losses;
+    const playerAMatchesPlayed = playerA.wins + playerA.losses;
+    const playerBMatchesPlayed = playerB.wins + playerB.losses;
 
-  const eloChangeA = calculateEloChange(playerA.elo, playerB.elo, playerAMatchesPlayed, formData.winnerId === playerA.id ? 'win' : 'loss');
-  const eloChangeB = calculateEloChange(playerB.elo, playerA.elo, playerBMatchesPlayed, formData.winnerId === playerB.id ? 'win' : 'loss');
+    const eloChangeA = calculateEloChange(playerA.elo, playerB.elo, playerAMatchesPlayed, formData.winnerId === playerA.id ? 'win' : 'loss');
+    const eloChangeB = calculateEloChange(playerB.elo, playerA.elo, playerBMatchesPlayed, formData.winnerId === playerB.id ? 'win' : 'loss');
 
-  // Update player stats
-  playerA.elo += eloChangeA;
-  playerA.wins += formData.winnerId === playerA.id ? 1 : 0;
-  playerA.losses += formData.winnerId === playerA.id ? 0 : 1;
+    // Update player stats
+    playerA.elo += eloChangeA;
+    playerA.wins += formData.winnerId === playerA.id ? 1 : 0;
+    playerA.losses += formData.winnerId === playerA.id ? 0 : 1;
 
-  playerB.elo += eloChangeB;
-  playerB.wins += formData.winnerId === playerB.id ? 1 : 0;
-  playerB.losses += formData.winnerId === playerB.id ? 0 : 1;
-  
-  const newPlayers = [...league.players];
-  newPlayers[playerAIndex] = playerA;
-  newPlayers[playerBIndex] = playerB;
+    playerB.elo += eloChangeB;
+    playerB.wins += formData.winnerId === playerB.id ? 1 : 0;
+    playerB.losses += formData.winnerId === playerB.id ? 0 : 1;
 
-  const newMatch: Match = {
-    id: `match-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    leagueId,
-    ...formData,
-    playerAName: playerA.name,
-    playerBName: playerB.name,
-    eloChangeA,
-    eloChangeB,
-    createdAt: new Date().toISOString(),
-  };
+    const newPlayers = [...league.players];
+    newPlayers[playerAIndex] = playerA;
+    newPlayers[playerBIndex] = playerB;
 
-  const newMatches = [...(league.matches || []), newMatch];
-  
-  const leagueDocRef = doc(db, 'leagues', leagueId);
-  await updateDoc(leagueDocRef, { players: newPlayers, matches: newMatches }).catch(async (serverError) => {
-    const permissionError = new FirestorePermissionError({
-        path: leagueDocRef.path,
-        operation: 'update',
-        requestResourceData: { players: newPlayers, matches: newMatches }
+    const newMatch: Match = {
+        id: `match-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        leagueId,
+        ...formData,
+        playerAName: playerA.name,
+        playerBName: playerB.name,
+        eloChangeA,
+        eloChangeB,
+        createdAt: new Date().toISOString(),
+    };
+
+    const newMatches = [...(league.matches || []), newMatch];
+
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    await updateDoc(leagueDocRef, { players: newPlayers, matches: newMatches }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { players: newPlayers, matches: newMatches }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to record match due to permissions.");
     });
-    errorEmitter.emit('permission-error', permissionError);
-    throw new Error("Failed to record match due to permissions.");
-  });
 
 
-  return newMatch;
+    return newMatch;
 }
 
 export async function deleteMatch(leagueId: string, matchId: string, requestingUserId: string): Promise<void> {
-  const league = await getLeagueById(leagueId);
-  if (!league) throw new Error("League not found.");
+    const league = await getLeagueById(leagueId);
+    if (!league) throw new Error("League not found.");
 
-  const matchToDelete = league.matches.find(m => m.id === matchId);
-  if (!matchToDelete) throw new Error("Match not found.");
+    const matchToDelete = league.matches.find(m => m.id === matchId);
+    if (!matchToDelete) throw new Error("Match not found.");
 
-  // Security checks (client-side for immediate feedback, also enforced by rules)
-  const isParticipant = matchToDelete.playerAId === requestingUserId || matchToDelete.playerBId === requestingUserId;
-  if (!isParticipant) throw new Error("Only a participant can delete this match.");
+    // Security checks (client-side for immediate feedback, also enforced by rules)
+    const isParticipant = matchToDelete.playerAId === requestingUserId || matchToDelete.playerBId === requestingUserId;
+    if (!isParticipant) throw new Error("Only a participant can delete this match.");
 
-  const matchDate = new Date(matchToDelete.createdAt);
-  const now = new Date();
-  const hoursSince = (now.getTime() - matchDate.getTime()) / (1000 * 60 * 60);
-  if (hoursSince > 12) throw new Error("This match is too old to be deleted by a player.");
+    const matchDate = new Date(matchToDelete.createdAt);
+    const now = new Date();
+    const hoursSince = (now.getTime() - matchDate.getTime()) / (1000 * 60 * 60);
+    if (hoursSince > 12) throw new Error("This match is too old to be deleted by a player.");
 
-  // Revert stats
-  const playerA = league.players.find(p => p.id === matchToDelete.playerAId);
-  const playerB = league.players.find(p => p.id === matchToDelete.playerBId);
-  if (!playerA || !playerB) throw new Error("One of the players in the match could not be found.");
+    // Revert stats
+    const playerA = league.players.find(p => p.id === matchToDelete.playerAId);
+    const playerB = league.players.find(p => p.id === matchToDelete.playerBId);
+    if (!playerA || !playerB) throw new Error("One of the players in the match could not be found.");
 
-  // Revert ELO
-  playerA.elo -= matchToDelete.eloChangeA;
-  playerB.elo -= matchToDelete.eloChangeB;
+    // Revert ELO
+    playerA.elo -= matchToDelete.eloChangeA;
+    playerB.elo -= matchToDelete.eloChangeB;
 
-  // Revert wins/losses
-  if (matchToDelete.winnerId === playerA.id) {
-    playerA.wins -= 1;
-    playerB.losses -= 1;
-  } else {
-    playerB.wins -= 1;
-    playerA.losses -= 1;
-  }
-  
-  const newPlayers = league.players.map(p => {
-    if (p.id === playerA.id) return playerA;
-    if (p.id === playerB.id) return playerB;
-    return p;
-  });
+    // Revert wins/losses
+    if (matchToDelete.winnerId === playerA.id) {
+        playerA.wins -= 1;
+        playerB.losses -= 1;
+    } else {
+        playerB.wins -= 1;
+        playerA.losses -= 1;
+    }
 
-  const newMatches = league.matches.filter(m => m.id !== matchId);
-
-  const leagueDocRef = doc(db, 'leagues', leagueId);
-  await updateDoc(leagueDocRef, {
-    players: newPlayers,
-    matches: newMatches
-  }).catch(async (serverError) => {
-    const permissionError = new FirestorePermissionError({
-      path: leagueDocRef.path,
-      operation: 'update',
-      requestResourceData: { players: newPlayers, matches: newMatches }
+    const newPlayers = league.players.map(p => {
+        if (p.id === playerA.id) return playerA;
+        if (p.id === playerB.id) return playerB;
+        return p;
     });
-    errorEmitter.emit('permission-error', permissionError);
-    throw new Error("Failed to delete match due to permissions.");
-  });
+
+    const newMatches = league.matches.filter(m => m.id !== matchId);
+
+    const leagueDocRef = doc(db, 'leagues', leagueId);
+    await updateDoc(leagueDocRef, {
+        players: newPlayers,
+        matches: newMatches
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: leagueDocRef.path,
+            operation: 'update',
+            requestResourceData: { players: newPlayers, matches: newMatches }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw new Error("Failed to delete match due to permissions.");
+    });
 }
 
 export async function getUserById(userId: string): Promise<User | null> {

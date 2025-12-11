@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getLeagueById, removePlayerFromLeague } from "@/lib/data";
+import { getLeagueById, addUserToLeague, removePlayerFromLeague } from "@/lib/data";
 import { notFound, useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,6 +104,17 @@ export default function LeaguePage() {
   const activePlayers = league.players.filter(p => p.status === 'active');
   const canRecordMatch = activePlayers.length >= 2;
 
+  const handleJoinLeague = async () => {
+    if (user && !isMember && league.privacy === 'public') {
+      await addUserToLeague(league.id, user);
+      fetchLeague();
+      toast({
+        title: "League Joined!",
+        description: `You are now a member of ${league.name}.`,
+      });
+    }
+  };
+
   const handleLeaveLeague = async () => {
     if (user && isMember) {
       await removePlayerFromLeague(league.id, user.id);
@@ -115,6 +126,7 @@ export default function LeaguePage() {
     }
   };
 
+  const showJoinForm = user && league.privacy === 'private' && !isMember;
   const showLeaderboard = league.privacy === 'public' || (league.privacy === 'private' && league.leaderboardVisible) || isMember || isAdmin;
 
 
@@ -141,7 +153,12 @@ export default function LeaguePage() {
         <CardContent>
           <Separator className="mb-4" />
           <div className="flex items-center gap-2 flex-wrap">
-            {!isMember && user && (
+            {!isMember && user && league.privacy === 'public' && (
+              <Button onClick={handleJoinLeague}>
+                <UserPlus className="mr-2 h-4 w-4" /> Join League
+              </Button>
+            )}
+            {showJoinForm && (
               <JoinPrivateLeagueForm leagueId={league.id} onLeagueJoined={fetchLeague} />
             )}
             {isMember && user && (
